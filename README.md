@@ -1,2 +1,2 @@
-# gulp-elf
-Reusable task declaration system for gulp
+# gulp-recipe
+Reusable and sharable recipe declaration system for gulp

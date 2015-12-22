@@ -1,8 +1,8 @@
 {
-    "name": "gulp-elf",
+    "name": "gulp-recipe",
     "version": "0.0.1",
-    "description": "Reusable task declaration system for gulp",
-    "main": "./scripts/gulp-elf-node.js",
+    "description": "Reusable recipe declaration system for gulp",
+    "main": "./scripts/gulp-recipe-node.js",
     "dependencies": {
         "bugcore": "^0.3.11",
         "npm": "^3.5.2"
@@ -18,20 +18,20 @@
         "jest-cli": "^0.8.1"
     },
     "author": "Brian Neisler <me@brianneisler.com>",
-    "homepage": "https://github.com/brianneisler/gulp-elf",
+    "homepage": "https://github.com/brianneisler/gulp-recipe",
     "repository": {
         "type": "git",
-        "url": "https://github.com/brianneisler/gulp-elf.git"
+        "url": "https://github.com/brianneisler/gulp-recipe.git"
     },
     "bugs": {
-        "url": "https://github.com/brianneisler/gulp-elf/issues"
+        "url": "https://github.com/brianneisler/gulp-recipe/issues"
     },
     "license": "MIT",
     "keywords": [
         "gulp",
-        "gulp-elf",
+        "gulp-recipe",
         "common",
-        "tasks"
+        "recipes"
     ],
     "engines": {
         "node": ">= 0.5.0"

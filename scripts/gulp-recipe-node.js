@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Brian Neisler. http://brianneisler.com
  *
- * gulp-elf may be freely distributed under the MIT license.
+ * gulp-recipe may be freely distributed under the MIT license.
  */
 
 
@@ -9,11 +9,11 @@
 // Script
 //-------------------------------------------------------------------------------
 
-var GulpElf     = require('../lib/GulpElf');
+var GulpRecipe      = require('../lib/GulpRecipe');
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-module.exports = GulpElf;
+module.exports = GulpRecipe;
