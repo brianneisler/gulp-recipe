@@ -14,7 +14,7 @@ free to ask!
 
 [![npm version](https://badge.fury.io/js/gulp-recipe.svg)](https://badge.fury.io/js/gulp-recipe)<br />
 [![Code Climate](https://codeclimate.com/github/brianneisler/gulp-recipe/badges/gpa.svg)](https://codeclimate.com/github/brianneisler/gulp-recipe)<br />
-[![Build Status](https://travis-ci.org/brianneisler/gulp-recipe.svg)](https://travis-ci.org/brianneisler/gulp-recipe)
+[![Build Status](https://travis-ci.org/brianneisler/gulp-recipe.svg)](https://travis-ci.org/brianneisler/gulp-recipe)<br />
 [![NPM](https://nodei.co/npm/gulp-recipe.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/gulp-recipe/)
 
 
