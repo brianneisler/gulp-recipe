@@ -15,6 +15,9 @@ results
 node_modules
 npm-debug.log
 
+# gulp recipes
+gulp-recipes
+
 # IntelliJ resources
 *.iml
 *.ipr
@@ -22,3 +25,6 @@ npm-debug.log
 
 #mac
 .DS_Store
+
+#development
+dist

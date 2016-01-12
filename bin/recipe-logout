@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .description('Logout of gulprecipe')
+    .action((options) => {
+        var LogoutCommand = require('../dist/js/commands/LogoutCommand').default;
+        LogoutCommand.run(options)
+            .then(() => {
+                console.log('You are now logged out.');
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Logout failed.');
+                console.log(error);
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);

@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .description('Signup for gulprecipe')
+    .action((options) => {
+        var SignupCommand = require('../dist/js/commands/SignupCommand').default;
+        SignupCommand.run(options)
+            .then(() => {
+                console.log('Success! Thanks for signing up.');
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Signup failed.');
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);

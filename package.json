@@ -1,18 +1,34 @@
 {
     "name": "gulp-recipe",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Reusable and sharable recipe declaration system for gulp",
-    "main": "./scripts/gulp-recipe-node.js",
+    "main": "./dist/scripts/gulp-recipe-node.js",
     "dependencies": {
-        "bugcore": "^0.3.11",
-        "npm": "^3.5.2"
+        "bugcore": "0.3.17",
+        "commander": "2.9.0",
+        "firebase": "2.3.2",
+        "fireproof": "3.1.0",
+        "npm": "3.5.2",
+        "prompt": "0.2.14"
     },
     "scripts": {
         "test": "gulp test"
     },
+    "bin": {
+        "recipe": "./bin/recipe"
+    },
     "devDependencies": {
+        "babel-jest": "^5.3.0",
+        "babel-preset-es2015": "^6.3.13",
+        "eslint": "^1.10.3",
         "gulp": "^3.9.0",
-        "gulp-recipe": "^0.0.1"
+        "gulp-babel": "^6.1.1",
+        "gulp-eslint": "^1.1.1",
+        "gulp-jest-iojs": "^1.0.3",
+        "gulp-recipe": "^0.0.2",
+        "gulp-sourcemaps": "^1.6.0",
+        "gulp-util": "^3.0.7",
+        "jest-cli": "^0.7.1"
     },
     "author": "Brian Neisler <me@brianneisler.com>",
     "homepage": "https://github.com/brianneisler/gulp-recipe",

@@ -26,7 +26,7 @@ var recipe          = require('gulp-recipe');
 
 // No defining dependencies in package.json or writing of basic gulp tasks.
 // gulp-recipe will download and install the task and all dependencies for you!
-gulp.task('lint', recipe.getRecipe('eslint', [
+gulp.task('lint', recipe.get('eslint', [
     'path/to/my/js',
     '!node_modules/**'
 ]));
@@ -36,8 +36,8 @@ gulp.task('lint', recipe.getRecipe('eslint', [
 ## Dependencies
 
 gulp-recipe is dependent upon
-[bugcore](https://github.com/airbug/bugcore)
-[npm](https://github.com/npm/npm)
+- [bugcore](https://github.com/airbug/bugcore)
+- [npm](https://github.com/npm/npm)
 
 
 ## Download Source
@@ -61,8 +61,19 @@ In node js:
 var gulp            = require('gulp');
 var recipe          = require('gulp-recipe');
 
-gulp.task('lint', recipe.getRecipe('eslint', [
+gulp.task('lint', recipe.get('eslint', [
     'path/to/my/js',
     '!node_modules/**'
 ]));
+```
+
+## Config
+* Config files are named '.reciperc OR .reciperc.json' and are all in JSON format 
+* All config files must have 0600 perms set or they will be ignored
+* Locations of config files
+```
+built-in: [/path/to/gulp-recipe/config/.reciperc]
+global: (ConfigController.get('prefix')[default: '/usr/local'])/etc/.reciperc
+per-user: '$HOME/.reciperc'
+per-project: '/path/to/project/.reciperc'
 ```

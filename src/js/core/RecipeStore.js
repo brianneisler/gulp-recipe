@@ -2,15 +2,11 @@
 // Imports
 //-------------------------------------------------------------------------------
 
-var bugcore         = require('bugcore');
-
-
-//-------------------------------------------------------------------------------
-// Simplify References
-//-------------------------------------------------------------------------------
-
-var Class           = bugcore.Class;
-var Obj             = bugcore.Obj;
+import {
+    Class,
+    Obj
+} from 'bugcore';
+import RecipeStoreCache from './RecipeStoreCache';
 
 
 //-------------------------------------------------------------------------------
@@ -21,9 +17,9 @@ var Obj             = bugcore.Obj;
  * @class
  * @extends {Obj}
  */
-var Recipe = Class.extend(Obj, {
+const RecipeStore = Class.extend(Obj, {
 
-    _name: 'gulprecipe.Recipe',
+    _name: 'recipe.RecipeStore',
 
 
     //-------------------------------------------------------------------------------
@@ -32,10 +28,9 @@ var Recipe = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {Array.<String>} dependencies
-     * @param {function(function(Error), *...)} recipeMethod
+     * @param {string} recipesDir
      */
-    _constructor: function(dependencies, recipeMethod) {
+    _constructor: function(recipesDir) {
 
         this._super();
 
@@ -46,15 +41,15 @@ var Recipe = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {Array.<string>}
+         * @type {RecipeStoreCache}
          */
-        this.dependencies   = dependencies;
+        this.recipeStoreCache       = new RecipeStoreCache();
 
         /**
          * @private
-         * @type {function(function(Error), *)}
+         * @type {string}
          */
-        this.recipeMethod   = recipeMethod;
+        this.recipesDir             = recipesDir;
     },
 
 
@@ -63,17 +58,17 @@ var Recipe = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Array.<string>}
+     * @return {RecipeStoreCache}
      */
-    getDependencies: function() {
-        return this.dependencies;
+    getRecipeStoreCache: function() {
+        return this.recipeStoreCache;
     },
 
     /**
-     * @return {function(function(Error), *)}
+     * @return {string}
      */
-    getRecipeMethod: function() {
-        return this.recipeMethod;
+    getRecipesDir: function() {
+        return this.recipesDir;
     },
 
 
@@ -81,11 +76,8 @@ var Recipe = Class.extend(Obj, {
     // Public Methods
     //-------------------------------------------------------------------------------
 
-    /**
-     * @param {Array.<*>} recipeArgs
-     */
-    runRecipe: function(recipeArgs) {
-        return this.recipeMethod.apply(null, recipeArgs);
+    loadRecipe: function(recipeName, recipeVersion) {
+
     }
 });
 
@@ -94,4 +86,4 @@ var Recipe = Class.extend(Obj, {
 // Exports
 //-------------------------------------------------------------------------------
 
-module.exports = Recipe;
+export default RecipeStore;

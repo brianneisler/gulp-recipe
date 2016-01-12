@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .description('Login to gulprecipe')
+    .action((options) => {
+        var LoginCommand = require('../dist/js/commands/LoginCommand').default;
+        LoginCommand.run(options)
+            .then(() => {
+                console.log('Success! Thanks for logging in.');
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Login failed.');
+                console.log(error);
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);

@@ -2,16 +2,11 @@
 // Imports
 //-------------------------------------------------------------------------------
 
-var bugcore         = require('bugcore');
-
-
-//-------------------------------------------------------------------------------
-// Simplify References
-//-------------------------------------------------------------------------------
-
-var Class           = bugcore.Class;
-var Map             = bugcore.Map;
-var Obj             = bugcore.Obj;
+import {
+    Class,
+    Map,
+    Obj
+} from 'bugcore';
 
 
 //-------------------------------------------------------------------------------
@@ -22,9 +17,9 @@ var Obj             = bugcore.Obj;
  * @class
  * @extends {Obj}
  */
-var RecipeStore = Class.extend(Obj, {
+const RecipeStoreCache = Class.extend(Obj, {
 
-    _name: 'gulprecipe.RecipeStore',
+    _name: 'recipe.RecipeStoreCache',
 
 
     //-------------------------------------------------------------------------------
@@ -47,7 +42,7 @@ var RecipeStore = Class.extend(Obj, {
          * @private
          * @type {Map.<string, Recipe>}
          */
-        this.recipeNameToRecipeMap   = new Map();
+        this.recipeNameToRecipeMap  = new Map();
     },
 
 
@@ -61,7 +56,7 @@ var RecipeStore = Class.extend(Obj, {
     getRecipeNameToRecipeMap: function() {
         return this.recipeNameToRecipeMap;
     },
-    
+
 
     //-------------------------------------------------------------------------------
     // Public Methods
@@ -85,10 +80,10 @@ var RecipeStore = Class.extend(Obj, {
 
     /**
      * @param {string} recipeName
-     * @param {Recipe} elfRecipe
+     * @param {Recipe} recipe
      */
-    setRecipe: function(recipeName, elfRecipe) {
-        this.recipeNameToRecipeMap.put(recipeName, elfRecipe);
+    setRecipe: function(recipeName, recipe) {
+        this.recipeNameToRecipeMap.put(recipeName, recipe);
     }
 });
 
@@ -97,4 +92,4 @@ var RecipeStore = Class.extend(Obj, {
 // Exports
 //-------------------------------------------------------------------------------
 
-module.exports = RecipeStore;
+export default RecipeStoreCache;

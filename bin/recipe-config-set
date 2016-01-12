@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .arguments('<key> <value>')
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .option('-u, --user', 'use user config file')
+    .option('-b, --bool', 'value is "true" or "false"')
+    .option('-i, --int', 'value is decimal number')
+    .description('set value in config file')
+    .action((key, value, options) => {
+        var ConfigSetCommand = require('../dist/js/commands/ConfigSetCommand').default;
+        ConfigSetCommand.run(key, value, options)
+            .then(() => {
+                console.log('Config value set');
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Config set failed');
+                console.log(error);
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);

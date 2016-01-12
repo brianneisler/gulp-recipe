@@ -1,0 +1,4 @@
+{
+    "prefix": "/usr/local",
+    "firebaseUrl": "https://gulp-recipe.firebaseio.com"
+}

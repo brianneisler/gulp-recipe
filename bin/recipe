@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+const result = program
+    .version('0.0.3') //TODO BRN: Get this value from package.json
+    .option('-ep, --exec-path', 'path to execute on')
+    .command('config [cmd]', 'set, get, or delete config')
+    .command('install <recipe-query>', 'manually install a recipe')
+    .command('login', 'login to a registry user account')
+    .command('logout', 'logout from a registry user account')
+    .command('publish', 'publish a recipe to the registry')
+    .command('signup', 'create a new registry user account')
+    .command('uninstall <recipe-query> ', 'uninstall a recipe')
+    .command('update [recipe-query]', 'update a recipe\'s dependencies')
+    .parse(process.argv);
+
+if (!program.args.length) program.help();
+if (result == program) {
+    console.log('\n  recipe: \'' + program.args[0] + '\' is not a command');
+    program.help();
+}

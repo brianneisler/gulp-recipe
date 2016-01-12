@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .description('publish a recipe')
+    .action((options) => {
+        var PublishCommand = require('../dist/js/commands/PublishCommand').default;
+        PublishCommand.run(options)
+            .then((publishedRecipe) => {
+                console.log('Recipe published ' + publishedRecipe.name + '@' + publishedRecipe.version);
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Publish failed.');
+                console.log(error);
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);

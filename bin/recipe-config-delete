@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+    .arguments('<key>')
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .option('-u, --user', 'use user config file')
+    .description('get value in config file')
+    .action((key, options) => {
+        const ConfigGetCommand = require('../dist/js/commands/ConfigGetCommand').default;
+        ConfigGetCommand.run(key, options)
+            .then((removedValue) => {
+                if (removedValue !== undefined) {
+                    console.log('Config value deleted - key:\'' + key + '\' value:\'' + removedValue + '\'');
+                } else {
+                    console.log('No value found for key:\'' + key + '\'');
+                }
+                process.exit();
+            })
+            .catch((error) => {
+                console.log('Config delete failed');
+                console.log(error);
+                process.exit(1);
+            });
+    })
+    .parse(process.argv);
