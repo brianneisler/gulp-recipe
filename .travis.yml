@@ -1,27 +1,22 @@
 language: node_js
 node_js:
-  - '5.3'
-
+- '5.3'
 cache:
   directories:
-    - node_modules
-    - $HOME/.npm
-    - $HOME/.gem
-
+  - node_modules
+  - "$HOME/.npm"
+  - "$HOME/.gem"
 before_install:
-  - npm install -g gulp
-
+- npm install -g gulp
 script:
-  - gulp test
-
+- gulp test
 before_deploy:
-  - gulp
-
+- gulp
 deploy:
   provider: npm
   email: npm@airbug.com
   skip_cleanup: true
-  api_key:
-
   on:
     tags: true
+  api_key:
+    secure: giiG6oQP/3XgSWrz335M+Kv166XH5wea+QVqyyUwFgFYkRuRnZn+8ef0czNNNxaLnqELb8sYLHiVKmporS5X7yR425d34ogOAFGhSVj/VG6OVvxzyQI2s1D5fZXA6JUAEYrSHuD6uGP0SFWfsRrD7qmBKk2wmRgG4Hkvo2JcxBjVBP7tr0puFT7kmNx89TWefGfbGL3ziLoITA9en/jeVSmG3JPuU+steAOpYxqfyqhXYaYICD5392nqwDSW47VQpjS3FaitaBHzRlFR15nk4zQYSfjjBlRLwjHOAxldos8/uGaCAO80nfVUNRAcbul1RilKKjXzOAkw990KE7A6oXnUX/DCxU/GSvJFzD+uEzV9rdIdpL5gzkArVsCzLVGNJwD9Gq5Jo7u4RkJnseyOKh3PEv0qdqeeBzwXwtaKECDlcECA9dBtVF4PB7VYvW4yVPgyt5vZKDHw1SBV6qBLs4bcX8wdA6w2pByUqagL61JgKZ1ikR2ojXVTTb4uUroW/b07fIVj/H/PLqNY/XOVGJtVjiXxzGZThf7XmbitJ3gksQo9yn8an61B1h4USUJNm9c5YoYWjaBDhDHMYaxfantmQ3xj/0E+Eg5L2NMk1v6G8L37BlZ6kxEwcvp+RAWs9vYsvep/HDOOcB18wAAE+k2GrvJksTAqZ2n2wD02Jfw=
