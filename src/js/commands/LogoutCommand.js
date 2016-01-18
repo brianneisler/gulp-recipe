@@ -4,11 +4,11 @@
 
 import {
     Class,
-    Obj,
-    Promise,
+    Promises,
     Proxy
 } from 'bugcore';
-import AuthController from '../controllers/AuthController';
+import Command from './Command';
+import GulpRecipe from '../GulpRecipe';
 
 
 //-------------------------------------------------------------------------------
@@ -17,9 +17,9 @@ import AuthController from '../controllers/AuthController';
 
 /**
  * @class
- * @extends {Obj}
+ * @extends {Command}
  */
-const LogoutCommand = Class.extend(Obj, {
+const LogoutCommand = Class.extend(Command, {
 
     _name: 'recipe.LogoutCommand',
 
@@ -55,29 +55,26 @@ const LogoutCommand = Class.extend(Obj, {
 
     /**
      * @param {{
-     *      global: boolean?,
-     *      project: boolean?
+     *      global: ?boolean,
+     *      project: ?boolean,
+     *      user: ?boolean
      * }} options
      * @return {Promise}
      */
     run: function(options) {
-        return new Promise((resolve, reject) => {
-            AuthController
-                .logout()
+        return Promises.try(() => {
+            options = this.refineTargetOption(options, 'user');
+            return GulpRecipe.logout(options)
                 .then(() => {
-                    resolve();
+                    console.log('You are now logged out.');
                 })
-                .catch(function(error) {
-                    reject(error);
+                .catch((error) => {
+                    console.log('Logout failed.');
+                    console.log(error);
+                    throw error;
                 });
         });
     }
-
-
-    //-------------------------------------------------------------------------------
-    // Private Methods
-    //-------------------------------------------------------------------------------
-
 });
 
 
@@ -122,4 +119,4 @@ Proxy.proxy(LogoutCommand, Proxy.method(LogoutCommand.getInstance), [
 // Exports
 //-------------------------------------------------------------------------------
 
-module.exports = LogoutCommand;
+export default LogoutCommand;

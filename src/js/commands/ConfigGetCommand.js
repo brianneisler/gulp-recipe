@@ -8,7 +8,7 @@ import {
     Proxy
 } from 'bugcore';
 import Command from './Command';
-import ConfigController from '../controllers/ConfigController';
+import GulpRecipe from '../GulpRecipe';
 
 
 //-------------------------------------------------------------------------------
@@ -33,25 +33,26 @@ const ConfigGetCommand = Class.extend(Command, {
      * @param {{
      *  global: boolean,
      *  project: boolean,
-     *  user: boolean,
-     *  bool: boolean,
-     *  int: boolean
+     *  user: boolean
      * }} options
      * @return {Promise}
      */
     run: function(key, options) {
         return Promises.try(() => {
-            let target = '';
-            if (options.global) {
-                target = 'global';
-            }
-            if (options.user) {
-                target = 'user';
-            }
-            if (options.project) {
-                target = 'project';
-            }
-            return ConfigController.getConfigProperty(key, target);
+            options = this.refineTargetOption(options, 'project');
+            return GulpRecipe.configGet(key, options)
+                .then((returnedValue) => {
+                    if (returnedValue !== undefined) {
+                        console.log('config - key:\'' + key + '\' value:' + '\'' + returnedValue + '\'');
+                    } else {
+                        console.log('No config value found for key \'' + key + '\'');
+                    }
+                })
+                .catch((error) => {
+                    console.log('Config get failed');
+                    console.log(error);
+                    throw error;
+                });
         });
     }
 

@@ -5,7 +5,8 @@
 import {
     Class,
     Obj,
-    Proxy
+    Proxy,
+    Throwables
 } from 'bugcore';
 import RecipeContext from '../context/RecipeContext';
 
@@ -24,15 +25,59 @@ const ContextController = Class.extend(Obj, {
 
 
     //-------------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @constructs
+     */
+    _constructor: function() {
+
+        this._super();
+
+
+        //-------------------------------------------------------------------------------
+        // Public Properties
+        //-------------------------------------------------------------------------------
+
+        /**
+         * @private
+         * @type {RecipeContext}
+         */
+        this.currentContext = null;
+    },
+
+
+    //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string=} execPath
      * @return {RecipeContext}
      */
-    generateContext: function(execPath) {
-        return new RecipeContext(execPath);
+    getCurrentContext: function() {
+        if (!this.currentContext) {
+            throw Throwables.exception('NoCurrentContext', {}, 'Must first establishContext before getting current context');
+        }
+        return this.currentContext;
+    },
+
+    /**
+     * @param {{
+     *      execPath: string=,
+     *      target: string=
+     * }=} options
+     * @return {RecipeContext}
+     */
+    establishContext: function(options) {
+        if (!this.currentContext) {
+            this.currentContext = new RecipeContext(options);
+        } else {
+            const newContext = new RecipeContext(options);
+            if (!Obj.equals(newContext, this.currentContext)) {
+                this.currentContext = newContext;
+            }
+        }
     }
 });
 
@@ -70,7 +115,8 @@ ContextController.getInstance = function() {
 //-------------------------------------------------------------------------------
 
 Proxy.proxy(ContextController, Proxy.method(ContextController.getInstance), [
-    'generateContext'
+    'getCurrentContext',
+    'establishContext'
 ]);
 
 

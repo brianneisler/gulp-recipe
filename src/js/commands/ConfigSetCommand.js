@@ -8,7 +8,7 @@ import {
     Proxy
 } from 'bugcore';
 import Command from './Command';
-import ConfigController from '../controllers/ConfigController';
+import GulpRecipe from '../GulpRecipe';
 
 
 //-------------------------------------------------------------------------------
@@ -42,16 +42,7 @@ const ConfigSetCommand = Class.extend(Command, {
      */
     run: function(key, value, options) {
         return Promises.try(() => {
-            const targets = [];
-            if (options.global) {
-                targets.push('global');
-            }
-            if (options.user) {
-                targets.push('user');
-            }
-            if (options.project || targets.length === 0) {
-                targets.push('project');
-            }
+            options = this.refineTargetOption(options, 'project');
             if (options.bool) {
                 if (value === 'false') {
                     value = false;
@@ -62,7 +53,15 @@ const ConfigSetCommand = Class.extend(Command, {
             if (options.int) {
                 value = parseInt(value);
             }
-            return ConfigController.setConfigProperty(key, value, targets);
+            return GulpRecipe.configSet(key, value, options)
+                .then(() => {
+                    console.log('Config value set');
+                })
+                .catch((error) => {
+                    console.log('Config set failed');
+                    console.log(error);
+                    throw error;
+                });
         });
     }
 

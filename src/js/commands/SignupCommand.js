@@ -4,12 +4,11 @@
 
 import {
     Class,
-    Obj,
-    Promise,
+    Promises,
     Proxy
 } from 'bugcore';
-import prompt from 'prompt';
-import AuthController from '../controllers/AuthController';
+import Command from './Command';
+import GulpRecipe from '../GulpRecipe';
 
 
 //-------------------------------------------------------------------------------
@@ -18,9 +17,9 @@ import AuthController from '../controllers/AuthController';
 
 /**
  * @class
- * @extends {Obj}
+ * @extends {Command}
  */
-const SignupCommand = Class.extend(Obj, {
+const SignupCommand = Class.extend(Command, {
 
     _name: 'recipe.SignupCommand',
 
@@ -56,13 +55,20 @@ const SignupCommand = Class.extend(Obj, {
 
     /**
      * @param {{
-     *      global: boolean?,
-     *      project: boolean?
+     *      global: ?boolean,
+     *      project: ?boolean,
+     *      user: ?boolean
      * }} options
      * @return {Promise}
      */
     run: function(options) {
-        return new Promise((resolve, reject) => {
+        return Promises.try(() => {
+            try {
+                options = this.refineTargetOption(options, 'user');
+            } catch(error) {
+                console.log(error);
+                console.log(error.stack);
+            }
             const schema = {
                 properties: {
                     username: {
@@ -82,38 +88,30 @@ const SignupCommand = Class.extend(Obj, {
                     }
                 }
             };
-
-            prompt.start();
-            prompt.get(schema, function(error, result) {
-                if (error) {
-                    return reject(error);
-                }
-                AuthController
-                    .signUp(result.username, result.email, result.password)
-                    .then((user, authData) => {
-                        // TODO BRN: Save current auth token to config
-                        // if global save global, if local save local, if both save both, if none save global
-                    })
-                    .then(() => {
-                        resolve();
-                    })
-                    .catch(function(error) {
-                        console.log(error);
-                        if (error.code === 'EMAIL_TAKEN') {
-                            //TODO BRN: Handle this...
-                        } else {
-                            reject(error);
-                        }
-                    });
-            });
+            return this.prompt(schema)
+                .then((result) => {
+                    return GulpRecipe
+                        .signUp(result.username, result.email, result.password, options)
+                        .catch((error) => {
+                            console.log(error);
+                            if (error.code === 'EMAIL_TAKEN') {
+                                //TODO BRN: Handle this...
+                            } else {
+                                throw error;
+                            }
+                        });
+                })
+                .then(() => {
+                    console.log('Success! Thanks for signing up.');
+                })
+                .catch((error) => {
+                    console.log('Signup failed.');
+                    console.log(error);
+                    console.log(error.stack);
+                    throw error;
+                });
         });
     }
-
-
-    //-------------------------------------------------------------------------------
-    // Private Methods
-    //-------------------------------------------------------------------------------
-
 });
 
 

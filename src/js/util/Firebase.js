@@ -106,6 +106,16 @@ const Firebase = Class.extend(Obj, {
     },
 
     /**
+     * @param eventType
+     * @param successCallback
+     * @param failureCallback
+     * @param context
+     */
+    once: function(eventType, successCallback, failureCallback, context) {
+        this._ref.once(eventType, successCallback, failureCallback, context);
+    },
+
+    /**
      * @method Firebase#proof
      * @return {Promise}
      */
@@ -160,6 +170,13 @@ const Firebase = Class.extend(Obj, {
     },
 
     /**
+     * @return {*}
+     */
+    unauth: function() {
+        return this._ref.unauth();
+    },
+
+    /**
      * @method Firebase#update
      * @param {Object} value
      * @param {function=} onComplete
@@ -173,6 +190,18 @@ const Firebase = Class.extend(Obj, {
 //-------------------------------------------------------------------------------
 // Static Methods
 //-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @param {string} token
+ * @param {function=} onComplete
+ * @return {Promise}
+ */
+Firebase.authWithCustomToken = function(token, onComplete) {
+    return (new Firebase([]))
+        .proof()
+        .authWithCustomToken(token, onComplete);
+};
 
 /**
  * @static
@@ -225,10 +254,18 @@ Firebase.proof = function(ref) {
 /**
  * @static
  * @param {*} ref
- * @return {firebase}
+ * @return {Firebase}
  */
 Firebase.ref = function(ref) {
     return (new Firebase(ref)).ref();
+};
+
+/**
+ * @static
+ */
+Firebase.unauth = function() {
+    return (new Firebase([]))
+        .unauth();
 };
 
 

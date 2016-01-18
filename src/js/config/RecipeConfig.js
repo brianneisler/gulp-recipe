@@ -30,8 +30,9 @@ const RecipeConfig = Class.extend(Config, {
     /**
      * @constructs
      * @param {string} filePath
+     * @param {boolean} exists
      */
-    _constructor: function(filePath) {
+    _constructor: function(filePath, exists) {
 
         this._super();
 
@@ -42,15 +43,28 @@ const RecipeConfig = Class.extend(Config, {
 
         /**
          * @private
+         * @type {boolean}
+         */
+        this.exists     = exists;
+
+        /**
+         * @private
          * @type {string}
          */
-        this.filePath = filePath;
+        this.filePath   = filePath;
     },
 
 
     //-------------------------------------------------------------------------------
     // Getters and Setters
     //-------------------------------------------------------------------------------
+
+    /**
+     * @return {boolean}
+     */
+    getExists: function() {
+        return this.exists;
+    },
 
     /**
      * @return {string}
@@ -104,16 +118,19 @@ const RecipeConfig = Class.extend(Config, {
  */
 RecipeConfig.loadFromFile = function(filePath) {
     return Promises.promise(function(resolve, reject) {
+        let exists = false;
         fs.readFile(filePath, 'utf8', function(readError, data) {
             if (readError) {
                 if (readError.code !== 'ENOENT') {
                     return reject(readError);
                 }
                 data = '{}';
+            } else {
+                exists = true;
             }
             try {
                 const propertyData = JSON.parse(data);
-                const recipeConfig = new RecipeConfig(filePath);
+                const recipeConfig = new RecipeConfig(filePath, exists);
                 recipeConfig.updateProperties(propertyData);
                 resolve(recipeConfig);
             } catch(error) {

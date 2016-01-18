@@ -4,7 +4,9 @@
 
 import {
     Class,
+    Map,
     Obj,
+    ObjectBuilder,
     Promises,
     Proxy,
     Set,
@@ -15,10 +17,12 @@ import fs from 'fs';
 import npm from 'npm';
 import path from 'path';
 import AuthController from './controllers/AuthController';
+import ConfigController from './controllers/ConfigController';
+import ContextController from './controllers/ContextController';
 import Recipe from './core/Recipe';
 import RecipeStore from './core/RecipeStore';
-import DataRecipe from './data/Recipe';
-import DataRecipeVersion from './data/RecipeVersion';
+import DataRecipe from './firebase/Recipe';
+import DataRecipeVersion from './firebase/RecipeVersion';
 
 
 //-------------------------------------------------------------------------------
@@ -29,7 +33,7 @@ import DataRecipeVersion from './data/RecipeVersion';
  * @class
  * @extends {Obj}
  */
-var GulpRecipe = Class.extend(Obj, {
+const GulpRecipe = Class.extend(Obj, {
 
     _name: 'recipe.GulpRecipe',
 
@@ -139,6 +143,70 @@ var GulpRecipe = Class.extend(Obj, {
     },
 
     /**
+     * @param {string} key
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    configDelete: function(key, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        return this.context(options)
+            .then(() => {
+                return ConfigController.deleteConfigProperty(key);
+            });
+    },
+
+    /**
+     * @param {string} key
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @returns {Promise}
+     */
+    configGet: function(key, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        return this.context(options)
+            .then(() => {
+                return ConfigController.getConfigProperty(key);
+            });
+    },
+
+    /**
+     * @param {string} key
+     * @param {*} value
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    configSet: function(key, value, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        return this.context(options)
+            .then(() => {
+                return ConfigController.setConfigProperty(key, value);
+            });
+    },
+
+    /**
+     * @param {{
+     *      execPath: string=,
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    context: function(options) {
+        ContextController.establishContext(options);
+        return ConfigController.loadConfigChain();
+    },
+
+    /**
      * @param {{
      *      main: string,
      *      name: string,
@@ -148,9 +216,9 @@ var GulpRecipe = Class.extend(Obj, {
      * @return {Recipe}
      */
     define: function(recipeObject) {
-        const gulpRecipe = new Recipe(recipeObject);
-        this.recipeStore.setRecipe(gulpRecipe.getName(), gulpRecipe);
-        return gulpRecipe;
+        const recipe = new Recipe(recipeObject);
+        this.recipeStore.setRecipe(recipe.getName(), recipe);
+        return recipe;
     },
 
     /**
@@ -158,7 +226,7 @@ var GulpRecipe = Class.extend(Obj, {
      * @return {function(function(Error), *...)}
      */
     get: function(recipeIdentifier) {
-        var recipeArgs  = Array.prototype.slice.call(arguments);
+        const recipeArgs  = Array.prototype.slice.call(arguments);
         recipeArgs.shift();
 
         return () => {
@@ -177,10 +245,54 @@ var GulpRecipe = Class.extend(Obj, {
     /**
      * @param {string} email
      * @param {string} password
-     * @param {{}} options
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
      */
     login: function(email, password, options) {
-        AuthController.login(email, password, options);
+        options = this.defineOptions(options, {
+            target: 'user'
+        });
+        return this.context(options)
+            .then(() => {
+                return AuthController.login(email, password);
+            });
+    },
+
+    /**
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    logout: function(options) {
+        options = this.defineOptions(options, {
+            target: 'user'
+        });
+        return this.context(options)
+            .then(() => {
+                return AuthController.logout();
+            });
+    },
+
+    /**
+     * @param {string} username
+     * @param {string} email
+     * @param {string} password
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    signUp: function(username, email, password, options) {
+        options = this.defineOptions(options, {
+            target: 'user'
+        });
+        return this.context(options)
+            .then(() => {
+                return AuthController.signUp(username, email, password);
+            });
     },
 
 
@@ -373,6 +485,26 @@ var GulpRecipe = Class.extend(Obj, {
 
     /**
      * @private
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @param {{
+     *      target: string=
+     * }=} defaults
+     * @return {{
+     *      target: string
+     * }}
+     */
+    defineOptions: function(options, defaults) {
+        options = options || {};
+        defaults  = defaults || {};
+        return ObjectBuilder
+            .assign(defaults, options)
+            .build();
+    },
+
+    /**
+     * @private
      * @param {string} recipeVersionQuery
      * @returns {Promise}
      */
@@ -450,8 +582,14 @@ GulpRecipe.getInstance = function() {
 
 Proxy.proxy(GulpRecipe, Proxy.method(GulpRecipe.getInstance), [
     'configure',
+    'configDelete',
+    'configGet',
+    'configSet',
     'define',
-    'get'
+    'get',
+    'login',
+    'logout',
+    'signUp'
 ]);
 
 

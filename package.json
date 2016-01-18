@@ -4,7 +4,7 @@
     "description": "Reusable and sharable recipe declaration system for gulp",
     "main": "./dist/scripts/gulp-recipe-node.js",
     "dependencies": {
-        "bugcore": "0.3.17",
+        "bugcore": "0.3.23",
         "commander": "2.9.0",
         "firebase": "2.3.2",
         "fireproof": "3.1.0",

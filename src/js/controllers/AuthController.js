@@ -4,12 +4,20 @@
 
 import {
     Class,
+    Map,
     Obj,
-    Proxy
+    Promises,
+    Proxy,
+    Throwables
 } from 'bugcore';
+import AuthData from '../data/AuthData';
+import ConfigController from './ConfigController';
+import ContextController from './ContextController';
+import CurrentUser from '../data/CurrentUser';
 import Firebase from '../util/Firebase';
-import User from '../data/User';
-import Username from '../data/fields/Username';
+import User from '../firebase/User';
+import UserData from '../data/UserData';
+import Username from '../firebase/fields/Username';
 
 
 //-------------------------------------------------------------------------------
@@ -41,13 +49,24 @@ const AuthController = Class.extend(Obj, {
         // Public Properties
         //-------------------------------------------------------------------------------
 
-
+        /**
+         * @private
+         * @type {Map.<RecipeContext, CurrentUser>}
+         */
+        this.contextToCurrentUserMap = new Map();
     },
 
 
     //-------------------------------------------------------------------------------
     // Getters and Setters
     //-------------------------------------------------------------------------------
+
+    /**
+     * @return {Map.<RecipeContext, CurrentUser>}
+     */
+    getContextToCurrentUserMap: function() {
+        return this.contextToCurrentUserMap;
+    },
 
 
     //-------------------------------------------------------------------------------
@@ -57,16 +76,36 @@ const AuthController = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    hasAuth: function() {
-
+    auth: function() {
+        return this.getCurrentUser()
+            .then((currentUser) => {
+                return this.authWithToken(currentUser.getAuthData().getToken());
+            });
     },
 
+    /**
+     * @param {string} email
+     * @param {string} password
+     * @return {Promise}
+     */
     login: function(email, password) {
-
+        return this.authWithPassword(email, password)
+            .then((authData) => {
+                return this.buildCurrentUserWithAuthData(authData);
+            })
+            .then((currentUser) => {
+                return this.setCurrentUser(currentUser);
+            });
     },
 
+    /**
+     * @return {Promise}
+     */
     logout: function() {
-
+        return this.unauth()
+            .then(() => {
+                return this.deleteCurrentUser();
+            });
     },
 
     /**
@@ -82,26 +121,30 @@ const AuthController = Class.extend(Obj, {
         return Firebase.createUser({
             email: email,
             password: password
-        }).then((userData) => {
+        }).then((firebaseUser) => {
             return this.authWithPassword(email, password)
                 .then((authData) => {
-                    return [userData, authData];
+                    return [firebaseUser, authData];
                 });
         }).then((results) => {
-            const [userData, authData] = results;
-            return User.set({
-                id: userData.uid,
+            const [firebaseUser, authData] = results;
+            const user = {
+                id: firebaseUser.uid,
                 signedUp: false,
                 username: ''
-            }).then((user) => {
-                return [user.val(), authData];
-            });
+            };
+            return User.set(user)
+                .then(() => {
+                    return [user, authData];
+                });
         }).then((results) => {
             const [user, authData] = results;
             return this.completeSignupWithUsername(user, username)
                 .then(() => {
-                    return [user, authData];
+                    return this.buildCurrentUserWithAuthData(authData);
                 });
+        }).then((currentUser) => {
+            return this.setCurrentUser(currentUser);
         });
 
         // TODO BRN: Save email address
@@ -136,9 +179,115 @@ const AuthController = Class.extend(Obj, {
         return Firebase.authWithPassword({
             email: email,
             password: password
-        }).then((authData) => {
-            console.log('authData:', authData);
-            return authData;
+        }).then((data) => {
+            return new AuthData(data);
+        });
+    },
+
+    /**
+     * @private
+     * @param {string} token
+     * @return {Promise}
+     */
+    authWithToken: function(token) {
+        return Firebase.authWithCustomToken(token)
+            .then((data) => {
+                return new AuthData(data);
+            });
+    },
+
+    /**
+     * @private
+     * @param {AuthData} authData
+     * @return {Promise}
+     */
+    buildCurrentUserWithAuthData: function(authData) {
+        return User.get(authData.getUid())
+            .then((snapshot) => {
+                const userData = new UserData(snapshot.val());
+                return new CurrentUser(userData, authData);
+            });
+    },
+
+    /**
+     * @private
+     * @return {Promise}
+     */
+    deleteAuthData: function() {
+        return ConfigController.deleteConfigProperty('auth');
+    },
+
+    /**
+     * @private
+     * @return {Promise}
+     */
+    deleteCurrentUser: function() {
+        const context = ContextController.getCurrentContext();
+        return this.deleteAuthData()
+            .then(() => {
+                this.contextToCurrentUserMap.remove(context);
+            });
+    },
+
+    /**
+     * @private
+     */
+    getAuthData: function() {
+        return ConfigController.getConfigProperty('auth')
+            .then((data) => {
+                if (!data) {
+                    throw Throwables.exception('NoAuthFound');
+                }
+                return new AuthData(data);
+            });
+    },
+
+    /**
+     * @private
+     * @returns {Promise}
+     */
+    getCurrentUser: function() {
+        const context = ContextController.getCurrentContext();
+        const currentUser = this.contextToCurrentUserMap.get(context);
+        if (!currentUser) {
+            return this.getAuthData()
+                .then((authData) => {
+                    return this.buildCurrentUserWithAuthData(authData);
+                });
+        }
+        return Promises.resolve(currentUser);
+    },
+
+    /**
+     * @private
+     * @param {AuthData} authData
+     * @returns {Promise}
+     */
+    setAuthData: function(authData) {
+        return ConfigController.setConfigProperty('auth', authData.toObject());
+    },
+
+    /**
+     * @private
+     * @param {CurrentUser} currentUser
+     * @returns {Promise}
+     */
+    setCurrentUser: function(currentUser) {
+        const context = ContextController.getCurrentContext();
+        return this.setAuthData(currentUser.getAuthData())
+            .then(() => {
+                this.contextToCurrentUserMap.put(context, currentUser);
+                return currentUser;
+            });
+    },
+
+    /**
+     * @private
+     * @return {Promise}
+     */
+    unauth: function() {
+        return Promises.try(() => {
+            return Firebase.unauth();
         });
     }
 });

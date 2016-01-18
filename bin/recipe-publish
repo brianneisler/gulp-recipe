@@ -4,6 +4,9 @@ var program = require('commander');
 
 program
     .description('publish a recipe')
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .option('-u, --user', 'use user config file')
     .action((options) => {
         var PublishCommand = require('../dist/js/commands/PublishCommand').default;
         PublishCommand.run(options)

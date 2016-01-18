@@ -4,14 +4,11 @@
 
 import {
     Class,
-    Obj,
-    Promise,
+    Promises,
     Proxy
 } from 'bugcore';
-import prompt from 'prompt';
-import AuthController from '../controllers/AuthController';
-import Firebase from '../util/Firebase';
-import User from '../data/User';
+import Command from './Command';
+import GulpRecipe from '../GulpRecipe';
 
 
 //-------------------------------------------------------------------------------
@@ -20,9 +17,9 @@ import User from '../data/User';
 
 /**
  * @class
- * @extends {Obj}
+ * @extends {Command}
  */
-const LoginCommand = Class.extend(Obj, {
+const LoginCommand = Class.extend(Command, {
 
     _name: 'recipe.LoginCommand',
 
@@ -58,56 +55,46 @@ const LoginCommand = Class.extend(Obj, {
 
     /**
      * @param {{
-     *      global: boolean?,
-     *      project: boolean?
+     *      global: ?boolean,
+     *      project: ?boolean,
+     *      user: ?boolean
      * }} options
      * @return {Promise}
      */
     run: function(options) {
-        return new Promise((resolve, reject) => {
+        return Promises.try(() => {
+            options = this.refineTargetOption(options, 'user');
+            console.log('options:', options);
             const schema = {
                 properties: {
-                    username: {
-                        pattern: /^[a-z]+(?:[a-z0-9-][a-z0-9]+)*$/,
-                        description: 'Please choose a username',
-                        message: 'username must start with a lowercase be only letters, numbers or dashes and must start with a letter.',
-                        required: true
-                    },
                     email: {
                         description: 'Please enter your email',
                         required: true
                     },
                     password: {
-                        description: 'Please choose a password',
+                        description: 'Please enter your password',
                         hidden: true,
                         required: true
                     }
                 }
             };
 
-            prompt.start();
-            prompt.get(schema, function(error, result) {
-                if (error) {
-                    return reject(error);
-                }
-                AuthController
-                    .signUp(result.username, result.email, result.password)
-                    .then((user, authData) => {
-                        // TODO BRN: Save current auth token to config
-                        // if global save global, if local save local, if both save both, if none save global
-                    })
-                    .then(() => {
-                        resolve();
-                    })
-                    .catch(function(error) {
-                        console.log(error);
-                        if (error.code === 'EMAIL_TAKEN') {
-                            //TODO BRN: Handle this...
-                        } else {
-                            reject(error);
-                        }
-                    });
-            });
+            return this.prompt(schema)
+                .then((result) => {
+                    return GulpRecipe.login(result.email, result.password, options)
+                        .catch((error) => {
+                            //TODO BRN: Handle recoverable login errors
+                            throw error;
+                        });
+                })
+                .then(() => {
+                    console.log('Success! Thanks for logging in.');
+                })
+                .catch((error) => {
+                    console.log('Login failed.');
+                    console.log(error);
+                    throw error;
+                });
         });
     }
 

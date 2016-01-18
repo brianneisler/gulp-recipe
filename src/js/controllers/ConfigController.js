@@ -70,11 +70,32 @@ const ConfigController = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @param {RecipeContext} context
+     * @return {ConfigChain}
+     */
+    getConfigChain: function(context) {
+        return this.contextToConfigChainMap.get(context);
+    },
+
+    /**
+     * @param {string} key
+     * @return {*}
+     */
+    getProperty: function(key) {
+        const context = ContextController.getCurrentContext();
+        const configChain = this.getConfigChain(context);
+        if (!configChain) {
+            throw Throwables.exception('ConfigNotLoaded', {}, 'Must first load the config before getProperty can be called');
+        }
+        return configChain.getProperty(key);
+    },
+
+    /**
      * @return {Promise}
      */
-    loadRecipeConfigChain: function() {
-        const context       = ContextController.generateContext();
-        const configChain   = this.contextToConfigChainMap.get(context);
+    loadConfigChain: function() {
+        const context = ContextController.getCurrentContext();
+        const configChain = this.getConfigChain(context);
         if (!configChain) {
             return this.buildConfigChainForContext(context)
                 .then((returnedConfigChain) => {
@@ -87,57 +108,56 @@ const ConfigController = Class.extend(Obj, {
 
     /**
      * @param {string} key
-     * @param {string} target
      * @return {Promise}
      */
-    getConfigProperty: function(key, target) {
-        return this.loadRecipeConfigChain()
+    deleteConfigProperty: function(key) {
+        return this.loadConfigChain()
             .then((configChain) => {
-                if (!target) {
-                    return configChain.getProperty(key);
+                const result = {
+                    deleted: false,
+                    exists: false,
+                    key: key,
+                    value: undefined
+                };
+                const config = configChain.getTargetConfig();
+                result.exists = config.getExists();
+                if (config.hasProperty(key)) {
+                    result.value = config.getProperty(key);
+                    result.deleted = config.deleteProperty(key);
+                    if (result.deleted) {
+                        return config.saveToFile()
+                            .then(() => {
+                                return result;
+                            });
+                    }
+                    return Promises.resolve(result);
                 }
-                var config = null;
-                if (target === 'project') {
-                    config = configChain.getProjectConfig();
-                } else if (target === 'user') {
-                    config = configChain.getUserConfig();
-                } else if (target === 'global') {
-                    config = configChain.getGlobalConfig();
-                } else {
-                    throw Throwables.exception('BadConfigTarget', {}, 'config target must be either "project", "user" or "global"');
-                }
-                return config.getProperty(key);
+                return Promises.resolve(result);
+            });
+    },
+
+    /**
+     * @param {string} key
+     * @return {Promise}
+     */
+    getConfigProperty: function(key) {
+        return this.loadConfigChain()
+            .then((configChain) => {
+                return configChain.getProperty(key);
             });
     },
 
     /**
      * @param {string} key
      * @param {*} value
-     * @param {Array.<string>} targets
+     * @return {Promise}
      */
-    setConfigProperty: function(key, value, targets) {
-        return this.loadRecipeConfigChain()
+    setConfigProperty: function(key, value) {
+        return this.loadConfigChain()
             .then((configChain) => {
-                console.log('made it here');
-                const promises = [];
-                if (!targets) {
-                    targets = ['project'];
-                }
-                targets.forEach((target) => {
-                    let config = null;
-                    if (target === 'project') {
-                        config = configChain.getProjectConfig();
-                    } else if (target === 'user') {
-                        config = configChain.getUserConfig();
-                    } else if (target === 'global') {
-                        config = configChain.getGlobalConfig();
-                    } else {
-                        throw Throwables.exception('BadConfigTarget', {}, 'config target must be either "project", "user" or "global"');
-                    }
-                    config.setProperty(key, value);
-                    promises.push(config.saveToFile());
-                });
-                return Promises.all(promises);
+                const config = configChain.getTargetConfig();
+                config.setProperty(key, value);
+                return config.saveToFile();
             });
     },
 
@@ -145,6 +165,16 @@ const ConfigController = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
     // Private Methods
     //-------------------------------------------------------------------------------
+
+    /**
+     * @private
+     * @param {RecipeContext} context
+     * @param {string} target
+     * @returns {boolean}
+     */
+    belowTarget(context, target) {
+        return ConfigController.TARGET_WEIGHT[context.getTarget()] < ConfigController.TARGET_WEIGHT[target];
+    },
 
     /**
      * @private
@@ -158,14 +188,14 @@ const ConfigController = Class.extend(Obj, {
         return Promises.props({
             builtIn: RecipeConfig.loadFromFile(modulePath + path.sep + 'config' + path.sep + ConfigController.CONFIG_FILE_NAME),
             global: '',
-            project: RecipeConfig.loadFromFile(execPath + path.sep + ConfigController.CONFIG_FILE_NAME),
-            user: RecipeConfig.loadFromFile(userPath + path.sep + ConfigController.CONFIG_FILE_NAME)
+            project: this.belowTarget(context, 'project') ? null : RecipeConfig.loadFromFile(execPath + path.sep + ConfigController.CONFIG_FILE_NAME),
+            user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(userPath + path.sep + ConfigController.CONFIG_FILE_NAME)
         }).then((configs) => {
-            const chain = new RecipeConfigChain(configs);
-            configs.global = RecipeConfig.loadFromFile(chain.getProperty('prefix') + path.sep + ConfigController.CONFIG_FILE_NAME);
+            const chain = new RecipeConfigChain(configs, context.getTarget());
+            configs.global = this.belowTarget(context, 'global ') ? null : RecipeConfig.loadFromFile(chain.getProperty('prefix') + path.sep + ConfigController.CONFIG_FILE_NAME);
             return Promises.props(configs);
         }).then((configs) => {
-            return new RecipeConfigChain(configs);
+            return new RecipeConfigChain(configs, context.getTarget());
         });
     }
 });
@@ -180,6 +210,16 @@ const ConfigController = Class.extend(Obj, {
  * @const {string}
  */
 ConfigController.CONFIG_FILE_NAME   = '.reciperc';
+
+/**
+ * @static
+ * @type {{global: number, user: number, project: number}}
+ */
+ConfigController.TARGET_WEIGHT = {
+    'global': 0,
+    'user': 1,
+    'project': 2
+};
 
 
 //-------------------------------------------------------------------------------
@@ -215,7 +255,10 @@ ConfigController.getInstance = function() {
 //-------------------------------------------------------------------------------
 
 Proxy.proxy(ConfigController, Proxy.method(ConfigController.getInstance), [
-    'loadRecipeConfigChain',
+    'getConfigChain',
+    'getProperty',
+    'loadConfigChain',
+    'deleteConfigProperty',
     'getConfigProperty',
     'setConfigProperty'
 ]);

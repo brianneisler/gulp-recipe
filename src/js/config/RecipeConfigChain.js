@@ -33,21 +33,21 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
      *  project: RecipeConfig,
      *  user: RecipeConfig
      * }} configs
+     * @param {string} target
      */
-    _constructor: function(configs) {
-
+    _constructor: function(configs, target) {
         const configArray = [];
-        if (configs.builtIn) {
-            configArray.push(configs.builtIn);
-        }
-        if (configs.global) {
-            configArray.push(configs.global);
+        if (configs.project) {
+            configArray.push(configs.project);
         }
         if (configs.user) {
             configArray.push(configs.user);
         }
-        if (configs.project) {
-            configArray.push(configs.project);
+        if (configs.global) {
+            configArray.push(configs.global);
+        }
+        if (configs.builtIn) {
+            configArray.push(configs.builtIn);
         }
 
         this._super(configArray);
@@ -69,6 +69,12 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
          * @type {RecipeConfig}
          */
         this.projectConfig      = configs.project;
+
+        /**
+         * @private
+         * @type {RecipeConfig}
+         */
+        this.targetConfig       = configs[target];
 
         /**
          * @private
@@ -101,6 +107,13 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
      */
     getProjectConfig: function() {
         return this.projectConfig;
+    },
+
+    /**
+     * @return {RecipeConfig}
+     */
+    getTargetConfig: function() {
+        return this.targetConfig;
     },
 
     /**

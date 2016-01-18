@@ -5,7 +5,7 @@
 import {
     Class,
     Obj,
-    Proxy,
+    Throwables,
     TypeUtil
 } from 'bugcore';
 import path from 'path';
@@ -50,7 +50,13 @@ const RecipeContext = Class.extend(Obj, {
          * @private
          * @type {string}
          */
-        this.modulePath    = '';
+        this.modulePath     = '';
+
+        /**
+         * @private
+         * @type {string}
+         */
+        this.target         = '';
 
         /**
          * @private
@@ -65,17 +71,29 @@ const RecipeContext = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string=} execPath
+     * @param {{
+     *      execPath: string=,
+     *      target: string=
+     * }=} options
      * @return {RecipeContext}
      */
-    init: function(execPath) {
+    init: function(options) {
         const _this = this._super();
         if (_this) {
-            if (TypeUtil.isString(execPath)) {
-                _this.execPath = path.resolve(execPath);
+            if (TypeUtil.isObject(options) && TypeUtil.isString(options.execPath)) {
+                _this.execPath = path.resolve(options.execPath);
             } else {
                 _this.execPath = path.resolve(process.cwd());
             }
+            if (TypeUtil.isObject(options) && TypeUtil.isString(options.target)) {
+                if (!RecipeContext.TARGETS[options.target]) {
+                    throw Throwables.illegalArgumentBug('options.target', options.target, 'target must be a valid target value ["global", "user", "project"]');
+                }
+                _this.target = options.target;
+            } else {
+                _this.target = 'project';
+            }
+
             _this.modulePath = path.resolve(__dirname, '../../..');
             _this.userPath = path.resolve(process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']);
         }
@@ -104,6 +122,13 @@ const RecipeContext = Class.extend(Obj, {
     /**
      * @return {string}
      */
+    getTarget: function() {
+        return this.target;
+    },
+
+    /**
+     * @return {string}
+     */
     getUserPath: function() {
         return this.userPath;
     },
@@ -123,7 +148,8 @@ const RecipeContext = Class.extend(Obj, {
             return (
                 Obj.equals(value.getModulePath(), this.modulePath) &&
                 Obj.equals(value.getExecPath(), this.execPath) &&
-                Obj.equals(value.getUserPath, this.userPath)
+                Obj.equals(value.getTarget(), this.target) &&
+                Obj.equals(value.getUserPath(), this.userPath)
             );
         }
         return false;
@@ -138,6 +164,7 @@ const RecipeContext = Class.extend(Obj, {
             this._hashCode = Obj.hashCode('[RecipeContext]' +
                 Obj.hashCode(this.modulePath) + '_' +
                 Obj.hashCode(this.execPath) + '_' +
+                Obj.hashCode(this.target) + '_' +
                 Obj.hashCode(this.userPath));
         }
         return this._hashCode;
@@ -146,42 +173,14 @@ const RecipeContext = Class.extend(Obj, {
 
 
 //-------------------------------------------------------------------------------
-// Private Static Properties
+// Static Properties
 //-------------------------------------------------------------------------------
 
-/**
- * @static
- * @private
- * @type {RecipeContext}
- */
-RecipeContext.instance        = null;
-
-
-//-------------------------------------------------------------------------------
-// Static Methods
-//-------------------------------------------------------------------------------
-
-/**
- * @static
- * @return {ConfigSetCommand}
- */
-RecipeContext.getInstance = function() {
-    if (RecipeContext.instance === null) {
-        RecipeContext.instance = new RecipeContext();
-    }
-    return RecipeContext.instance;
+RecipeContext.TARGETS = {
+    global: 'global',
+    project: 'project',
+    user: 'user'
 };
-
-
-//-------------------------------------------------------------------------------
-// Static Proxy
-//-------------------------------------------------------------------------------
-
-Proxy.proxy(RecipeContext, Proxy.method(RecipeContext.getInstance), [
-    'getExecPath',
-    'getModulePath',
-    'getUserPath'
-]);
 
 
 //-------------------------------------------------------------------------------
