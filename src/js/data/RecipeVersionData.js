@@ -17,9 +17,9 @@ import {
  * @class
  * @extends {Obj}
  */
-const UserData = Class.extend(Obj, {
+const RecipeVersionData = Class.extend(Obj, {
 
-    _name: 'recipe.UserData',
+    _name: 'recipe.RecipeVersionData',
 
 
     //-------------------------------------------------------------------------------
@@ -29,7 +29,11 @@ const UserData = Class.extend(Obj, {
     /**
      * @constructs
      * @param {{
-     *      id: string
+     *  createdAt: number,
+     *  published: boolean,
+     *  recipeUrl: string,
+     *  updatedAt: number,
+     *  versionNumber: string
      * }} data
      */
     _constructor: function(data) {
@@ -43,9 +47,33 @@ const UserData = Class.extend(Obj, {
 
         /**
          * @private
+         * @type {number}
+         */
+        this.createdAt              = data.createdAt;
+
+        /**
+         * @private
+         * @type {boolean}
+         */
+        this.published              = data.published;
+
+        /**
+         * @private
          * @type {string}
          */
-        this.id = data.id;
+        this.recipeUrl              = data.recipeUrl;
+
+        /**
+         * @private
+         * @type {number}
+         */
+        this.updatedAt              = data.updatedAt;
+
+        /**
+         * @private
+         * @type {string}
+         */
+        this.versionNumber          = data.versionNumber;
     },
 
 
@@ -54,10 +82,38 @@ const UserData = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @return {number}
+     */
+    getCreatedAt: function() {
+        return this.createdAt;
+    },
+
+    /**
+     * @return {boolean}
+     */
+    getPublished: function() {
+        return this.published;
+    },
+
+    /**
      * @return {string}
      */
-    getId: function() {
-        return this.id;
+    getRecipeUrl: function() {
+        return this.recipeUrl;
+    },
+
+    /**
+     * @return {number}
+     */
+    getUpdatedAt: function() {
+        return this.updatedAt;
+    },
+
+    /**
+     * @return {string}
+     */
+    getVersionNumber: function() {
+        return this.versionNumber;
     },
 
 
@@ -70,7 +126,11 @@ const UserData = Class.extend(Obj, {
      */
     toObject: function() {
         return {
-            id: this.id
+            createdAt: this.createdAt,
+            published: this.published,
+            recipeUrl: this.recipeUrl,
+            updatedAt: this.updatedAt,
+            versionNumber: this.versionNumber
         };
     }
 });
@@ -80,11 +140,11 @@ const UserData = Class.extend(Obj, {
 // Interfaces
 //-------------------------------------------------------------------------------
 
-Class.implement(UserData, IObjectable);
+Class.implement(RecipeVersionData, IObjectable);
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-export default UserData;
+export default RecipeVersionData;

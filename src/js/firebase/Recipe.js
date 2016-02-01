@@ -3,8 +3,10 @@
 //-------------------------------------------------------------------------------
 
 import {
-    Class
+    Class,
+    ObjectUtil
 } from 'bugcore';
+import firebase from 'firebase';
 import Entity from './Entity';
 
 
@@ -24,6 +26,34 @@ const Recipe = Class.extend(Entity, {
 //-------------------------------------------------------------------------------
 // Static Methods
 //-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @param {{
+ *  lastPublishedVersion: string=,
+ *  name: string
+ * }} recipeData
+ * @param {UserData} userData
+ * @return {Fireproof}
+ */
+Recipe.create = function(recipeData, userData) {
+    const userId = userData.getId();
+    ObjectUtil.assign(recipeData, {
+        lastPublishedVersion: '',
+        collaborators: {
+            [userId]: {
+                createdAt: firebase.ServerValue.TIMESTAMP,
+                owner: true,
+                updatedAt: firebase.ServerValue.TIMESTAMP,
+                userId: userId
+            }
+        }
+    });
+    return Recipe.set(recipeData)
+        .then(() => {
+            return recipeData;
+        });
+};
 
 /**
  * @static

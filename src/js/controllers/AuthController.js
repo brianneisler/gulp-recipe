@@ -84,6 +84,21 @@ const AuthController = Class.extend(Obj, {
     },
 
     /**
+     * @returns {Promise<CurrentUser>}
+     */
+    getCurrentUser: function() {
+        const context = ContextController.getCurrentContext();
+        const currentUser = this.contextToCurrentUserMap.get(context);
+        if (!currentUser) {
+            return this.getAuthData()
+                .then((authData) => {
+                    return this.buildCurrentUserWithAuthData(authData);
+                });
+        }
+        return Promises.resolve(currentUser);
+    },
+
+    /**
      * @param {string} email
      * @param {string} password
      * @return {Promise}
@@ -244,22 +259,6 @@ const AuthController = Class.extend(Obj, {
 
     /**
      * @private
-     * @returns {Promise}
-     */
-    getCurrentUser: function() {
-        const context = ContextController.getCurrentContext();
-        const currentUser = this.contextToCurrentUserMap.get(context);
-        if (!currentUser) {
-            return this.getAuthData()
-                .then((authData) => {
-                    return this.buildCurrentUserWithAuthData(authData);
-                });
-        }
-        return Promises.resolve(currentUser);
-    },
-
-    /**
-     * @private
      * @param {AuthData} authData
      * @returns {Promise}
      */
@@ -328,6 +327,7 @@ AuthController.getInstance = function() {
 Proxy.proxy(AuthController, Proxy.method(AuthController.getInstance), [
     'auth',
     'login',
+    'getCurrentUser',
     'logout',
     'signUp'
 ]);

@@ -4,6 +4,7 @@
 
 import {
     Class,
+    ObjectUtil,
     StringUtil
 } from 'bugcore';
 import Entity from './Entity';
@@ -25,6 +26,25 @@ const RecipeVersion = Class.extend(Entity, {
 //-------------------------------------------------------------------------------
 // Static Methods
 //-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @param {string} recipeName
+ * @param {{
+ *   versionNumber: string
+ * }} data
+ * @return {Fireproof}
+ */
+RecipeVersion.create = function(recipeName, data) {
+    ObjectUtil.assign(data, {
+        published: false,
+        recipeUrl: ''
+    });
+    return RecipeVersion.set(recipeName, data)
+        .then(() => {
+            return data;
+        });
+};
 
 /**
  * @static
@@ -55,13 +75,13 @@ RecipeVersion.remove = function(recipeName, versionNumber) {
  * @param {{
  *      recipeUrl: string,
  *      versionNumber: string
- * }} recipeVersion
+ * }} data
  * @returns {Promise}
  */
-RecipeVersion.set = function(recipeName, recipeVersion) {
-    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(recipeVersion.versionNumber, '.', '-')]))
+RecipeVersion.set = function(recipeName, data) {
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(data.versionNumber, '.', '-')]))
         .proof()
-        .set(recipeVersion);
+        .set(data);
 };
 
 

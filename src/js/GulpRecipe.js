@@ -19,7 +19,7 @@ import path from 'path';
 import AuthController from './controllers/AuthController';
 import ConfigController from './controllers/ConfigController';
 import ContextController from './controllers/ContextController';
-import PublishController from './controllers/PublishController';
+import RecipeController from './controllers/RecipeController';
 import Recipe from './core/Recipe';
 import RecipeStore from './core/RecipeStore';
 import DataRecipe from './firebase/Recipe';
@@ -294,7 +294,7 @@ const GulpRecipe = Class.extend(Obj, {
         recipePath = path.resolve(recipePath);
         return this.context(options)
             .then(() => {
-                return PublishController.publishRecipe(recipePath);
+                return RecipeController.publishRecipe(recipePath);
             });
     },
 
