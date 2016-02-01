@@ -1,23 +1,25 @@
 #!/usr/bin/env node
 
 var program = require('commander');
+var _       = require('lodash');
 
 program
     .description('publish a recipe')
+    .arguments('[path]')
     .option('-g, --global', 'use global config file')
     .option('-p, --project', 'use project config file')
     .option('-u, --user', 'use user config file')
-    .action((options) => {
-        var PublishCommand = require('../dist/js/commands/PublishCommand').default;
-        PublishCommand.run(options)
-            .then((publishedRecipe) => {
-                console.log('Recipe published ' + publishedRecipe.name + '@' + publishedRecipe.version);
-                process.exit();
-            })
-            .catch((error) => {
-                console.log('Publish failed.');
-                console.log(error);
-                process.exit(1);
-            });
-    })
     .parse(process.argv);
+
+((options) => {
+
+    var path = _.first(program.args);
+    var PublishCommand = require('../dist/js/commands/PublishCommand').default;
+    PublishCommand.run(path, options)
+        .then(() => {
+            process.exit();
+        })
+        .catch(() => {
+            process.exit(1);
+        });
+})(program);

@@ -48,7 +48,6 @@ const Firebase = Class.extend(Obj, {
          */
         this._ref = null;
 
-
         if (value instanceof firebase) {
             this._ref = value;
         } else if (TypeUtil.isArray(value)) {
@@ -75,6 +74,15 @@ const Firebase = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
+
+    /**
+     * @param {string} authToken
+     * @param {function=} onComplete
+     * @param {{}} options
+     */
+    authWithCustomToken: function(authToken, onComplete, options) {
+        this._ref.authWithCustomToken(authToken, onComplete, options);
+    },
 
     /**
      * @param {{

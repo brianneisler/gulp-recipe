@@ -32,7 +32,7 @@ const RecipeCollaborator = Class.extend(Entity, {
  * @return {Fireproof}
  */
 RecipeCollaborator.get = function(recipeName, userId) {
-    return (new RecipeCollaborator(['recipes', 'public', recipeName, 'collaborators', userId]))
+    return (new RecipeCollaborator(['recipes', 'gulp', 'public', recipeName, 'collaborators', userId]))
         .proof();
 };
 
@@ -43,7 +43,7 @@ RecipeCollaborator.get = function(recipeName, userId) {
  * @returns {Promise}
  */
 RecipeCollaborator.remove = function(recipeName, userId) {
-    return (new RecipeCollaborator(['recipes', 'public', recipeName, 'collaborators', userId]))
+    return (new RecipeCollaborator(['recipes', 'gulp', 'public', recipeName, 'collaborators', userId]))
         .proof()
         .remove();
 };
@@ -58,7 +58,7 @@ RecipeCollaborator.remove = function(recipeName, userId) {
  * @returns {Promise}
  */
 RecipeCollaborator.set = function(recipeName, recipeCollaborator) {
-    return (new RecipeCollaborator(['recipes', 'public', recipeName, 'collaborators', recipeCollaborator.userId]))
+    return (new RecipeCollaborator(['recipes', 'gulp', 'public', recipeName, 'collaborators', recipeCollaborator.userId]))
         .proof()
         .set(recipeCollaborator);
 };
@@ -73,7 +73,7 @@ RecipeCollaborator.set = function(recipeName, recipeCollaborator) {
  * @return {Promise}
  */
 RecipeCollaborator.update = function(recipeName, userId, updates) {
-    return (new RecipeCollaborator(['recipes', 'public', recipeName, 'collaborators', userId]))
+    return (new RecipeCollaborator(['recipes', 'gulp', 'public', recipeName, 'collaborators', userId]))
         .proof()
         .update(updates);
 };

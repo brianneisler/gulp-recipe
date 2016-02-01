@@ -3,9 +3,11 @@
 //-------------------------------------------------------------------------------
 
 import {
-    Class
+    Class,
+    ObjectUtil
 } from 'bugcore';
 import Firebase from '../util/Firebase';
+import firebase from 'firebase';
 
 
 //-------------------------------------------------------------------------------
@@ -69,7 +71,7 @@ const Entity = Class.extend(Firebase, {
      * }} entity
      */
     addCreatedAt: function(entity) {
-        entity.createdAt = (new Date()).getTime();
+        ObjectUtil.assign(entity, { createdAt: firebase.ServerValue.TIMESTAMP });
     },
 
     /**
@@ -94,7 +96,7 @@ const Entity = Class.extend(Firebase, {
      * }} entity
      */
     addUpdatedAt: function(entity) {
-        entity.updatedAt = (new Date()).getTime();
+        ObjectUtil.assign(entity, { updatedAt: firebase.ServerValue.TIMESTAMP });
     }
 });
 

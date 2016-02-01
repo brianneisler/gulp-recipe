@@ -78,6 +78,7 @@ const ContextController = Class.extend(Obj, {
                 this.currentContext = newContext;
             }
         }
+        return this.currentContext;
     }
 });
 

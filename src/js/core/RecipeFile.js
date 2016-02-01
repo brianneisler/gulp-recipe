@@ -4,8 +4,11 @@
 
 import {
     Class,
-    Config,
-    Promises
+    IJsonable,
+    IObjectable,
+    Obj,
+    Promises,
+    Throwables
 } from 'bugcore';
 import fs from 'fs-promise';
 
@@ -16,11 +19,11 @@ import fs from 'fs-promise';
 
 /**
  * @class
- * @extends {Config}
+ * @extends {Obj}
  */
-const RecipeConfig = Class.extend(Config, {
+const RecipeFile = Class.extend(Obj, {
 
-    _name: 'recipe.RecipeConfig',
+    _name: 'recipe.RecipeFile',
 
 
     //-------------------------------------------------------------------------------
@@ -30,9 +33,9 @@ const RecipeConfig = Class.extend(Config, {
     /**
      * @constructs
      * @param {string} filePath
-     * @param {boolean} exists
+     * @param {{}} data
      */
-    _constructor: function(filePath, exists) {
+    _constructor: function(filePath, data) {
 
         this._super();
 
@@ -43,15 +46,21 @@ const RecipeConfig = Class.extend(Config, {
 
         /**
          * @private
-         * @type {boolean}
+         * @type {string}
          */
-        this.exists     = exists;
+        this.filePath   = filePath;
 
         /**
          * @private
          * @type {string}
          */
-        this.filePath   = filePath;
+        this.name       = data.name;
+
+        /**
+         * @private
+         * @type {string}
+         */
+        this.version    = data.version;
     },
 
 
@@ -60,21 +69,55 @@ const RecipeConfig = Class.extend(Config, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {boolean}
-     */
-    getExists: function() {
-        return this.exists;
-    },
-
-    /**
      * @return {string}
      */
     getFilePath: function() {
         return this.filePath;
     },
 
+    /**
+     * @return {string}
+     */
+    getName: function() {
+        return this.name;
+    },
+
+    /**
+     * @return {string}
+     */
+    getVersion: function() {
+        return this.version;
+    },
+
 
     //-------------------------------------------------------------------------------
+    // IJsonable Implementation
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {string}
+     */
+    toJson: function() {
+        return JSON.stringify(this.toObject());
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // IObjectable Implementation
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {Object}
+     */
+    toObject: function() {
+        return {
+            name: this.name,
+            version: this.version
+        };
+    },
+
+
+     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
@@ -97,6 +140,14 @@ const RecipeConfig = Class.extend(Config, {
 
 
 //-------------------------------------------------------------------------------
+// Interfaces
+//-------------------------------------------------------------------------------
+
+Class.implement(RecipeFile, IJsonable);
+Class.implement(RecipeFile, IObjectable);
+
+
+//-------------------------------------------------------------------------------
 // Static Methods
 //-------------------------------------------------------------------------------
 
@@ -105,24 +156,17 @@ const RecipeConfig = Class.extend(Config, {
  * @param {string} filePath
  * @return {Promise}
  */
-RecipeConfig.loadFromFile = function(filePath) {
-    let exists = false;
+RecipeFile.loadFromFile = function(filePath) {
     return fs.readFile(filePath, 'utf8')
-        .then((data) => {
-            exists = true;
-            return data;
-        })
         .catch((error) => {
-            if (error.code !== 'ENOENT') {
-                throw error;
+            if (error.code === 'ENOENT') {
+                throw Throwables.exception('NoRecipeFileFound', {}, 'Could not find recipe file at "' + filePath + '"');
             }
-            return '{}';
+            throw error;
         })
         .then((data) => {
-            const propertyData = JSON.parse(data);
-            const recipeConfig = new RecipeConfig(filePath, exists);
-            recipeConfig.updateProperties(propertyData);
-            return recipeConfig;
+            const fileData = JSON.parse(data);
+            return new RecipeFile(filePath, fileData);
         });
 };
 
@@ -131,4 +175,4 @@ RecipeConfig.loadFromFile = function(filePath) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default RecipeConfig;
+export default RecipeFile;

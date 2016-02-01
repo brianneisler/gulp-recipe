@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-- '5.3'
+- '5.4'
 cache:
   directories:
   - node_modules
@@ -10,7 +10,6 @@ before_install:
 - npm install -g gulp
 script:
 - gulp test
-before_deploy:
 - gulp
 deploy:
   provider: npm

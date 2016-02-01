@@ -3,7 +3,8 @@
 //-------------------------------------------------------------------------------
 
 import {
-    Class
+    Class,
+    StringUtil
 } from 'bugcore';
 import Entity from './Entity';
 
@@ -32,7 +33,7 @@ const RecipeVersion = Class.extend(Entity, {
  * @return {Fireproof}
  */
 RecipeVersion.get = function(recipeName, versionNumber) {
-    return (new RecipeVersion(['recipes', 'public', recipeName, 'versions', versionNumber]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
         .proof();
 };
 
@@ -43,7 +44,7 @@ RecipeVersion.get = function(recipeName, versionNumber) {
  * @returns {Promise}
  */
 RecipeVersion.remove = function(recipeName, versionNumber) {
-    return (new RecipeVersion(['recipes', 'public', recipeName, 'versions', versionNumber]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
         .proof()
         .remove();
 };
@@ -58,7 +59,7 @@ RecipeVersion.remove = function(recipeName, versionNumber) {
  * @returns {Promise}
  */
 RecipeVersion.set = function(recipeName, recipeVersion) {
-    return (new RecipeVersion(['recipes', 'public', recipeName, 'versions', recipeVersion.versionNumber]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(recipeVersion.versionNumber, '.', '-')]))
         .proof()
         .set(recipeVersion);
 };

@@ -326,6 +326,7 @@ AuthController.getInstance = function() {
 //-------------------------------------------------------------------------------
 
 Proxy.proxy(AuthController, Proxy.method(AuthController.getInstance), [
+    'auth',
     'login',
     'logout',
     'signUp'

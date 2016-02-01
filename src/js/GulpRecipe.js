@@ -19,6 +19,7 @@ import path from 'path';
 import AuthController from './controllers/AuthController';
 import ConfigController from './controllers/ConfigController';
 import ContextController from './controllers/ContextController';
+import PublishController from './controllers/PublishController';
 import Recipe from './core/Recipe';
 import RecipeStore from './core/RecipeStore';
 import DataRecipe from './firebase/Recipe';
@@ -277,6 +278,27 @@ const GulpRecipe = Class.extend(Obj, {
     },
 
     /**
+     * @param {string} recipePath
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    publish: function(recipePath, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        if (!recipePath) {
+            recipePath = options.execPath;
+        }
+        recipePath = path.resolve(recipePath);
+        return this.context(options)
+            .then(() => {
+                return PublishController.publishRecipe(recipePath);
+            });
+    },
+
+    /**
      * @param {string} username
      * @param {string} email
      * @param {string} password
@@ -486,20 +508,27 @@ const GulpRecipe = Class.extend(Obj, {
     /**
      * @private
      * @param {{
+     *      execPath: string=,
      *      target: string=
      * }=} options
      * @param {{
+     *      execPath: string=,
      *      target: string=
-     * }=} defaults
+     * }=} suppliedDefaults
      * @return {{
+     *      execPath: string,
      *      target: string
      * }}
      */
-    defineOptions: function(options, defaults) {
-        options = options || {};
-        defaults  = defaults || {};
+    defineOptions: function(options, suppliedDefaults) {
+        options             = options || {};
+        suppliedDefaults    = suppliedDefaults || {};
+        const defaults      = {
+            execPath: process.cwd()
+        };
+
         return ObjectBuilder
-            .assign(defaults, options)
+            .assign(defaults, suppliedDefaults, options)
             .build();
     },
 
@@ -589,6 +618,7 @@ Proxy.proxy(GulpRecipe, Proxy.method(GulpRecipe.getInstance), [
     'get',
     'login',
     'logout',
+    'publish',
     'signUp'
 ]);
 

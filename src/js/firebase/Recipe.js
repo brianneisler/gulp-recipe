@@ -31,7 +31,7 @@ const Recipe = Class.extend(Entity, {
  * @return {Fireproof}
  */
 Recipe.get = function(recipeName) {
-    return (new Recipe(['recipes', 'public', recipeName]))
+    return (new Recipe(['recipes', 'gulp', 'public', recipeName]))
         .proof();
 };
 
@@ -44,7 +44,7 @@ Recipe.get = function(recipeName) {
  * @returns {Promise}
  */
 Recipe.set = function(recipe) {
-    return (new Recipe(['recipes', 'public', recipe.name]))
+    return (new Recipe(['recipes', 'gulp', 'public', recipe.name]))
         .proof()
         .set(recipe);
 };
@@ -58,7 +58,7 @@ Recipe.set = function(recipe) {
  * @return {Promise}
  */
 Recipe.update = function(recipeName, updates) {
-    return (new Recipe(['recipes', 'public', recipeName]))
+    return (new Recipe(['recipes', 'gulp', 'public', recipeName]))
         .proof()
         .update(updates);
 };

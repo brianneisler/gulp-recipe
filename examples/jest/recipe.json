@@ -1,0 +1,8 @@
+{
+    "name": "jest",
+    "version": "0.0.1",
+    "main": "./jest.js",
+    "npmDependencies": {
+        "gulp-jest": "^0.4.0"
+    }
+}
