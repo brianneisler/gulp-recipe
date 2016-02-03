@@ -16,7 +16,9 @@ node_modules
 npm-debug.log
 
 # gulp recipes
-gulp-recipes
+.recipe
+.reciperc
+!config/.reciperc
 
 # IntelliJ resources
 *.iml

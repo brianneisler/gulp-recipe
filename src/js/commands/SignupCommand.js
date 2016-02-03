@@ -31,7 +31,7 @@ const SignupCommand = Class.extend(Command, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -61,7 +61,7 @@ const SignupCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run: function(options) {
+    run(options) {
         return Promises.try(() => {
             try {
                 options = this.refineTargetOption(options, 'user');

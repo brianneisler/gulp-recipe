@@ -36,7 +36,7 @@ const RecipeVersionData = Class.extend(Obj, {
      *  versionNumber: string
      * }} data
      */
-    _constructor: function(data) {
+    _constructor(data) {
 
         this._super();
 
@@ -84,35 +84,35 @@ const RecipeVersionData = Class.extend(Obj, {
     /**
      * @return {number}
      */
-    getCreatedAt: function() {
+    getCreatedAt() {
         return this.createdAt;
     },
 
     /**
      * @return {boolean}
      */
-    getPublished: function() {
+    getPublished() {
         return this.published;
     },
 
     /**
      * @return {string}
      */
-    getRecipeUrl: function() {
+    getRecipeUrl() {
         return this.recipeUrl;
     },
 
     /**
      * @return {number}
      */
-    getUpdatedAt: function() {
+    getUpdatedAt() {
         return this.updatedAt;
     },
 
     /**
      * @return {string}
      */
-    getVersionNumber: function() {
+    getVersionNumber() {
         return this.versionNumber;
     },
 
@@ -124,7 +124,7 @@ const RecipeVersionData = Class.extend(Obj, {
     /**
      * @return {Object}
      */
-    toObject: function() {
+    toObject() {
         return {
             createdAt: this.createdAt,
             published: this.published,

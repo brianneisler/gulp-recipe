@@ -37,7 +37,7 @@ const ConfigDeleteCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run: function(key, options) {
+    run(key, options) {
         return Promises.try(() => {
             options = this.refineTargetOption(options, 'project');
             return GulpRecipe.configDelete(key, options)

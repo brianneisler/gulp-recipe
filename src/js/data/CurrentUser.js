@@ -32,7 +32,7 @@ const CurrentUser = Class.extend(Obj, {
      * @param {UserData} userData
      * @param {AuthData} authData
      */
-    _constructor: function(userData, authData) {
+    _constructor(userData, authData) {
 
         this._super();
 
@@ -62,14 +62,14 @@ const CurrentUser = Class.extend(Obj, {
     /**
      * @return {AuthData}
      */
-    getAuthData: function() {
+    getAuthData() {
         return this.authData;
     },
 
     /**
      * @return {UserData}
      */
-    getUserData: function() {
+    getUserData() {
         return this.userData;
     },
 
@@ -81,7 +81,7 @@ const CurrentUser = Class.extend(Obj, {
     /**
      * @return {Object}
      */
-    toObject: function() {
+    toObject() {
         return {
             auth: this.authData.toObject(),
             user: this.userData.toObject()
@@ -96,7 +96,7 @@ const CurrentUser = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    toJson: function() {
+    toJson() {
         return JSON.stringify(this.toObject());
     }
 });

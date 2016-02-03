@@ -17,9 +17,9 @@ import {
  * @class
  * @extends {Obj}
  */
-const RecipeData = Class.extend(Obj, {
+const PublishKeyData = Class.extend(Obj, {
 
-    _name: 'recipe.RecipeData',
+    _name: 'recipe.PublishKeyData',
 
 
     //-------------------------------------------------------------------------------
@@ -29,13 +29,15 @@ const RecipeData = Class.extend(Obj, {
     /**
      * @constructs
      * @param {{
-     *      collaborators: {},
      *      createdAt: number,
-     *      lastPublishedVersion: string,
-     *      name: string,
-     *      scope: string,
-     *      type: string,
+     *      key: string,
+     *      recipeHash: string,
+     *      recipeName: string,
+     *      recipeScope: string,
+     *      recipeType: string,
+     *      recipeVersionNumber: string,
      *      updatedAt: number
+     *      usedAt: ?number
      * }} data
      */
     _constructor(data) {
@@ -49,12 +51,6 @@ const RecipeData = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {{}}
-         */
-        this.collaborators          = data.collaborators;
-
-        /**
-         * @private
          * @type {number}
          */
         this.createdAt              = data.createdAt;
@@ -63,44 +59,55 @@ const RecipeData = Class.extend(Obj, {
          * @private
          * @type {string}
          */
-        this.lastPublishedVersion   = data.lastPublishedVersion;
+        this.key                    = data.key;
 
         /**
          * @private
          * @type {string}
          */
-        this.name                   = data.name;
+        this.recipeHash             = data.recipeHash;
 
         /**
          * @private
          * @type {string}
          */
-        this.scope                  = data.scope;
+        this.recipeName             = data.recipeName;
 
         /**
          * @private
          * @type {string}
          */
-        this.type                   = data.type;
+        this.recipeScope            = data.recipeScope;
+
+          /**
+         * @private
+         * @type {string}
+         */
+        this.recipeType             = data.recipeType;
+
+        /**
+         * @private
+         * @type {string}
+         */
+        this.recipeVersionNumber    = data.recipeVersionNumber;
 
         /**
          * @private
          * @type {number}
          */
         this.updatedAt              = data.updatedAt;
+
+        /**
+         * @private
+         * @type {?number}
+         */
+        this.usedAt                 = data.usedAt;
     },
 
 
     //-------------------------------------------------------------------------------
     // Getters and Setters
     //-------------------------------------------------------------------------------
-
-    /**
-     * @return {{}}
-     */
-    getCollaborators() {
-        return this.collaborators;
-    },
 
     /**
      * @return {number}
@@ -112,29 +119,43 @@ const RecipeData = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getLastPublishedVersion() {
-        return this.lastPublishedVersion;
+    getKey() {
+        return this.key;
     },
 
     /**
      * @return {string}
      */
-    getName() {
-        return this.name;
+    getRecipeHash() {
+        return this.recipeHash;
     },
 
     /**
      * @return {string}
      */
-    getScope() {
-        return this.scope;
+    getRecipeName() {
+        return this.recipeName;
     },
 
     /**
      * @return {string}
      */
-    getType() {
-        return this.type;
+    getRecipeScope() {
+        return this.recipeScope;
+    },
+
+    /**
+     * @return {string}
+     */
+    getRecipeType() {
+        return this.recipeType;
+    },
+
+    /**
+     * @return {string}
+     */
+    getRecipeVersionNumber() {
+        return this.recipeVersionNumber;
     },
 
     /**
@@ -142,6 +163,13 @@ const RecipeData = Class.extend(Obj, {
      */
     getUpdatedAt() {
         return this.updatedAt;
+    },
+
+    /**
+     * @returns {?number}
+     */
+    getUsedAt() {
+        return this.usedAt;
     },
 
 
@@ -154,13 +182,15 @@ const RecipeData = Class.extend(Obj, {
      */
     toObject() {
         return {
-            collaborators: this.collaborators,
             createdAt: this.createdAt,
-            lastPublishedVersion: this.lastPublishedVersion,
-            name: this.name,
-            scope: this.scope,
-            type: this.type,
-            updatedAt: this.updatedAt
+            key: this.key,
+            recipeHash: this.recipeHash,
+            recipeName: this.recipeName,
+            recipeScope: this.recipeScope,
+            recipeType: this.recipeType,
+            recipeVersionNumber: this.recipeVersionNumber,
+            updatedAt: this.updatedAt,
+            usedAt: this.usedAt
         };
     }
 });
@@ -170,11 +200,11 @@ const RecipeData = Class.extend(Obj, {
 // Interfaces
 //-------------------------------------------------------------------------------
 
-Class.implement(RecipeData, IObjectable);
+Class.implement(PublishKeyData, IObjectable);
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-export default RecipeData;
+export default PublishKeyData;

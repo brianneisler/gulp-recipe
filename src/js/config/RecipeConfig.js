@@ -32,7 +32,7 @@ const RecipeConfig = Class.extend(Config, {
      * @param {string} filePath
      * @param {boolean} exists
      */
-    _constructor: function(filePath, exists) {
+    _constructor(filePath, exists) {
 
         this._super();
 
@@ -62,14 +62,14 @@ const RecipeConfig = Class.extend(Config, {
     /**
      * @return {boolean}
      */
-    getExists: function() {
+    getExists() {
         return this.exists;
     },
 
     /**
      * @return {string}
      */
-    getFilePath: function() {
+    getFilePath() {
         return this.filePath;
     },
 
@@ -81,7 +81,7 @@ const RecipeConfig = Class.extend(Config, {
     /**
      * @return {Promise}
      */
-    saveToFile: function() {
+    saveToFile() {
         return Promises.try(() => {
             const json = this.toJson();
             const options = {
@@ -119,6 +119,9 @@ RecipeConfig.loadFromFile = function(filePath) {
             return '{}';
         })
         .then((data) => {
+            if (!data) {
+                data = '{}';
+            }
             const propertyData = JSON.parse(data);
             const recipeConfig = new RecipeConfig(filePath, exists);
             recipeConfig.updateProperties(propertyData);

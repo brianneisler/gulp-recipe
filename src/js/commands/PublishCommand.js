@@ -31,7 +31,7 @@ const PublishCommand = Class.extend(Command, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -42,11 +42,6 @@ const PublishCommand = Class.extend(Command, {
 
 
     },
-
-
-    //-------------------------------------------------------------------------------
-    // Getters and Setters
-    //-------------------------------------------------------------------------------
 
 
     //-------------------------------------------------------------------------------
@@ -62,12 +57,12 @@ const PublishCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run: function(recipePath, options) {
+    run(recipePath, options) {
         return Promises.try(() => {
             options = this.refineTargetOption(options, 'project');
             return GulpRecipe.publish(recipePath, options)
-                .then((publishedRecipe) => {
-                    console.log('Recipe published ' + publishedRecipe.name + '@' + publishedRecipe.version);
+                .then((publishKeyData) => {
+                    console.log('Recipe published ' + publishKeyData.getRecipeName() + '@' + publishKeyData.getRecipeVersionNumber());
                 })
                 .catch((error) => {
                     console.log('Publish failed.');

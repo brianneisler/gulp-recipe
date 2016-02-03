@@ -4,6 +4,7 @@
 
 import {
     Class,
+    Config,
     Map,
     Obj,
     Promises,
@@ -36,7 +37,7 @@ const ConfigController = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -44,6 +45,12 @@ const ConfigController = Class.extend(Obj, {
         //-------------------------------------------------------------------------------
         // Public Properties
         //-------------------------------------------------------------------------------
+
+        /**
+         * @private
+         * @type {Config}
+         */
+        this.configOverride         = new Config();
 
         /**
          * @private
@@ -60,7 +67,7 @@ const ConfigController = Class.extend(Obj, {
     /**
      * @return {Map.<RecipeContext, ConfigChain>}
      */
-    getContextToConfigChainMap: function() {
+    getContextToConfigChainMap() {
         return this.contextToConfigChainMap;
     },
 
@@ -73,7 +80,7 @@ const ConfigController = Class.extend(Obj, {
      * @param {RecipeContext} context
      * @return {ConfigChain}
      */
-    getConfigChain: function(context) {
+    getConfigChain(context) {
         return this.contextToConfigChainMap.get(context);
     },
 
@@ -81,7 +88,7 @@ const ConfigController = Class.extend(Obj, {
      * @param {string} key
      * @return {*}
      */
-    getProperty: function(key) {
+    getProperty(key) {
         const context = ContextController.getCurrentContext();
         const configChain = this.getConfigChain(context);
         if (!configChain) {
@@ -93,7 +100,7 @@ const ConfigController = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    loadConfigChain: function() {
+    loadConfigChain() {
         const context = ContextController.getCurrentContext();
         const configChain = this.getConfigChain(context);
         if (!configChain) {
@@ -110,7 +117,7 @@ const ConfigController = Class.extend(Obj, {
      * @param {string} key
      * @return {Promise}
      */
-    deleteConfigProperty: function(key) {
+    deleteConfigProperty(key) {
         return this.loadConfigChain()
             .then((configChain) => {
                 const result = {
@@ -140,7 +147,7 @@ const ConfigController = Class.extend(Obj, {
      * @param {string} key
      * @return {Promise}
      */
-    getConfigProperty: function(key) {
+    getConfigProperty(key) {
         return this.loadConfigChain()
             .then((configChain) => {
                 return configChain.getProperty(key);
@@ -152,13 +159,29 @@ const ConfigController = Class.extend(Obj, {
      * @param {*} value
      * @return {Promise}
      */
-    setConfigProperty: function(key, value) {
+    setConfigProperty(key, value) {
         return this.loadConfigChain()
             .then((configChain) => {
                 const config = configChain.getTargetConfig();
                 config.setProperty(key, value);
                 return config.saveToFile();
             });
+    },
+
+    /**
+     * @param {string} key
+     * @returns {*}
+     */
+    getConfigOverride(key) {
+        return this.configOverride.getProperty(key);
+    },
+
+    /**
+     * @param {string} key
+     * @param {*} value
+     */
+    setConfigOverride(key, value) {
+        return this.configOverride.setProperty(key, value);
     },
 
 
@@ -181,7 +204,7 @@ const ConfigController = Class.extend(Obj, {
      * @param {RecipeContext} context
      * @return {Promise}
      */
-    buildConfigChainForContext: function(context) {
+    buildConfigChainForContext(context) {
         const execPath      = context.getExecPath();
         const modulePath    = context.getModulePath();
         const userPath      = context.getUserPath();
@@ -189,7 +212,8 @@ const ConfigController = Class.extend(Obj, {
             builtIn: RecipeConfig.loadFromFile(modulePath + path.sep + 'config' + path.sep + ConfigController.CONFIG_FILE_NAME),
             global: '',
             project: this.belowTarget(context, 'project') ? null : RecipeConfig.loadFromFile(execPath + path.sep + ConfigController.CONFIG_FILE_NAME),
-            user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(userPath + path.sep + ConfigController.CONFIG_FILE_NAME)
+            user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(userPath + path.sep + ConfigController.CONFIG_FILE_NAME),
+            override: this.configOverride
         }).then((configs) => {
             const chain = new RecipeConfigChain(configs, context.getTarget());
             configs.global = this.belowTarget(context, 'global ') ? null : RecipeConfig.loadFromFile(chain.getProperty('prefix') + path.sep + ConfigController.CONFIG_FILE_NAME);
@@ -260,7 +284,9 @@ Proxy.proxy(ConfigController, Proxy.method(ConfigController.getInstance), [
     'loadConfigChain',
     'deleteConfigProperty',
     'getConfigProperty',
-    'setConfigProperty'
+    'setConfigProperty',
+    'getConfigOverride',
+    'setConfigOverride'
 ]);
 
 

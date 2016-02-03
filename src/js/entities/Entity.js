@@ -7,7 +7,6 @@ import {
     ObjectUtil
 } from 'bugcore';
 import Firebase from '../util/Firebase';
-import firebase from 'firebase';
 
 
 //-------------------------------------------------------------------------------
@@ -32,7 +31,7 @@ const Entity = Class.extend(Firebase, {
      * @param {function=} onComplete
      * @return {Firebase}
      */
-    push: function(value, onComplete) {
+    push(value, onComplete) {
         this.addTime(value);
         return this._super(value, onComplete);
     },
@@ -42,7 +41,7 @@ const Entity = Class.extend(Firebase, {
      * @param {*} value
      * @param {function=} onComplete
      */
-    set: function(value, onComplete) {
+    set(value, onComplete) {
         this.addTime(value);
         this._super(value, onComplete);
     },
@@ -52,7 +51,7 @@ const Entity = Class.extend(Firebase, {
      * @param {Object} value
      * @param {function=} onComplete
      */
-    update: function(value, onComplete) {
+    update(value, onComplete) {
         this.addUpdatedAt(value);
         this._super(value, onComplete);
     },
@@ -70,8 +69,8 @@ const Entity = Class.extend(Firebase, {
      *  updatedAt: number
      * }} entity
      */
-    addCreatedAt: function(entity) {
-        ObjectUtil.assign(entity, { createdAt: firebase.ServerValue.TIMESTAMP });
+    addCreatedAt(entity) {
+        ObjectUtil.assign(entity, { createdAt: Firebase.timestamp() });
     },
 
     /**
@@ -82,7 +81,7 @@ const Entity = Class.extend(Firebase, {
      *  updatedAt: number
      * }} entity
      */
-    addTime: function(entity) {
+    addTime(entity) {
         this.addCreatedAt(entity);
         this.addUpdatedAt(entity);
     },
@@ -95,8 +94,8 @@ const Entity = Class.extend(Firebase, {
      *  updatedAt: number
      * }} entity
      */
-    addUpdatedAt: function(entity) {
-        ObjectUtil.assign(entity, { updatedAt: firebase.ServerValue.TIMESTAMP });
+    addUpdatedAt(entity) {
+        ObjectUtil.assign(entity, { updatedAt: Firebase.timestamp() });
     }
 });
 

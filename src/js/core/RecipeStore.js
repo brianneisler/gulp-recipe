@@ -30,7 +30,7 @@ const RecipeStore = Class.extend(Obj, {
      * @constructs
      * @param {string} recipesDir
      */
-    _constructor: function(recipesDir) {
+    _constructor(recipesDir) {
 
         this._super();
 
@@ -60,14 +60,14 @@ const RecipeStore = Class.extend(Obj, {
     /**
      * @return {RecipeStoreCache}
      */
-    getRecipeStoreCache: function() {
+    getRecipeStoreCache() {
         return this.recipeStoreCache;
     },
 
     /**
      * @return {string}
      */
-    getRecipesDir: function() {
+    getRecipesDir() {
         return this.recipesDir;
     },
 
@@ -76,7 +76,7 @@ const RecipeStore = Class.extend(Obj, {
     // Public Methods
     //-------------------------------------------------------------------------------
 
-    loadRecipe: function(recipeName, recipeVersion) {
+    loadRecipe(recipeName, recipeVersion) {
 
     }
 });

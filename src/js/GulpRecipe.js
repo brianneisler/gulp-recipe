@@ -16,14 +16,23 @@ import {
 import fs from 'fs';
 import npm from 'npm';
 import path from 'path';
-import AuthController from './controllers/AuthController';
-import ConfigController from './controllers/ConfigController';
-import ContextController from './controllers/ContextController';
-import RecipeController from './controllers/RecipeController';
-import Recipe from './core/Recipe';
-import RecipeStore from './core/RecipeStore';
-import DataRecipe from './firebase/Recipe';
-import DataRecipeVersion from './firebase/RecipeVersion';
+import * as controllers from './controllers';
+import * as core from './core';
+import * as data from './data';
+import * as entities from './entities';
+import * as util from './util';
+
+
+//-------------------------------------------------------------------------------
+// Simplify References
+//-------------------------------------------------------------------------------
+
+const {
+    AuthController,
+    ConfigController,
+    ContextController,
+    RecipeController
+} = controllers;
 
 
 //-------------------------------------------------------------------------------
@@ -46,7 +55,7 @@ const GulpRecipe = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -94,7 +103,7 @@ const GulpRecipe = Class.extend(Obj, {
     /**
      * @return {GulpRecipe}
      */
-    init: function() {
+    init() {
         const _this = this._super();
         if (_this) {
             _this.configure({
@@ -112,14 +121,14 @@ const GulpRecipe = Class.extend(Obj, {
     /**
      * @return {RecipeStore}
      */
-    getCurrentRecipeStore: function() {
+    getCurrentRecipeStore() {
         return this.currentRecipeStore;
     },
 
     /**
      * @return {Map.<string, RecipeStore>}
      */
-    getRecipeStoreMap: function() {
+    getRecipeStoreMap() {
         return this.recipeStoreMap;
     },
 
@@ -133,7 +142,7 @@ const GulpRecipe = Class.extend(Obj, {
      *      recipesDir: string
      * }} configObject
      */
-    configure: function(configObject) {
+    configure(configObject) {
         if (TypeUtil.isObject(configObject)) {
             if (TypeUtil.isString(configObject.recipesDir)) {
                 this.configureRecipesDir(configObject.recipesDir);
@@ -150,7 +159,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    configDelete: function(key, options) {
+    configDelete(key, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
@@ -167,7 +176,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @returns {Promise}
      */
-    configGet: function(key, options) {
+    configGet(key, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
@@ -185,7 +194,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    configSet: function(key, value, options) {
+    configSet(key, value, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
@@ -202,7 +211,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    context: function(options) {
+    context(options) {
         ContextController.establishContext(options);
         return ConfigController.loadConfigChain();
     },
@@ -216,8 +225,8 @@ const GulpRecipe = Class.extend(Obj, {
      * }} recipeObject
      * @return {Recipe}
      */
-    define: function(recipeObject) {
-        const recipe = new Recipe(recipeObject);
+    define(recipeObject) {
+        const recipe = new core.Recipe(recipeObject);
         this.recipeStore.setRecipe(recipe.getName(), recipe);
         return recipe;
     },
@@ -226,10 +235,9 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeIdentifier
      * @return {function(function(Error), *...)}
      */
-    get: function(recipeIdentifier) {
+    get(recipeIdentifier) {
         const recipeArgs  = Array.prototype.slice.call(arguments);
         recipeArgs.shift();
-
         return () => {
             const gulpArgs = Array.prototype.slice.call(arguments);
             const [ recipeName, recipeVersionQuery ] = this.parseRecipeIdentifier(recipeIdentifier);
@@ -251,7 +259,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    login: function(email, password, options) {
+    login(email, password, options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
@@ -267,7 +275,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    logout: function(options) {
+    logout(options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
@@ -284,7 +292,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    publish: function(recipePath, options) {
+    publish(recipePath, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
@@ -307,7 +315,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    signUp: function(username, email, password, options) {
+    signUp(username, email, password, options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
@@ -326,8 +334,8 @@ const GulpRecipe = Class.extend(Obj, {
      * @private
      * @param {string} recipesDir
      */
-    configureRecipesDir: function(recipesDir) {
-        const recipeStore = new RecipeStore(recipesDir);
+    configureRecipesDir(recipesDir) {
+        const recipeStore = new core.RecipeStore(recipesDir);
         this.recipeStoreMap.put(recipesDir, recipeStore);
         this.currentRecipeStore = recipeStore;
     },
@@ -336,7 +344,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @private
      * @return {Promise}
      */
-    ensureNpmLoaded: function() {
+    ensureNpmLoaded() {
         return Promises.promise((resolve) => {
             if (!this.npmLoaded) {
                 resolve(this.loadNpm());
@@ -351,7 +359,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {Recipe} gulpRecipe
      * @return {Promise}
      */
-    ensureRecipeDependenciesInstalled: function(gulpRecipe) {
+    ensureRecipeDependenciesInstalled(gulpRecipe) {
         return this.ensureNpmLoaded()
             .then(() => {
                 const dependenciesToInstall = [];
@@ -372,8 +380,8 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeVersionQuery
      * @return {Promise}
      */
-    ensureRecipeInstalled: function(recipeName, recipeVersionQuery) {
-        return DataRecipe.get(recipeName)
+    ensureRecipeInstalled(recipeName, recipeVersionQuery) {
+        return entities.Recipe.get(recipeName)
             .then((snapshot) => {
                 if (!snapshot.exists()) {
                     throw new Throwables.exception('RecipeDoesNotExist', {}, 'A gulp-recipe by the name "' + recipeName + '" does not exist.');
@@ -384,17 +392,17 @@ const GulpRecipe = Class.extend(Obj, {
                 return snapshot.val().lastPublishedVersion;
             })
             .then((recipeVersionNumber) => {
-                return DataRecipeVersion.get(recipeName, recipeVersionNumber)
+                return entities.RecipeVersion.get(recipeName, recipeVersionNumber)
                     .then((snapshot) => {
                         if (!snapshot.exists()) {
                             throw new Throwables.exception('RecipeVersionDoesNotExist', {}, 'Cannot find version "' + recipeVersionNumber + '" for gulp-recipe "' + recipeName + '".');
                         }
                         return snapshot.val();
                     });
-            })
-            .then((recipeVersion) => {
-                //TODO BRN: Check the download cache
             });
+            /*.then((recipeVersion) => {
+                //TODO BRN: Check the download cache
+            });*/
     },
 
     /**
@@ -402,15 +410,14 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeName
      * @return {Promise}
      */
-    findAndDefineRecipe: function(recipeName) {
+    findAndDefineRecipe(recipeName) {
         this.tryFindRecipeObject(recipeName)
             .then((recipeObject) => {
                 if (!recipeObject) {
                     throw Throwables.exception('CouldNotFindRecipe', {}, 'Could not find recipe by the name "' + recipeName + '"');
                 }
+                return this.define(recipeObject);
             });
-
-        return this.define(recipeName, recipeObject);
     },
 
     /**
@@ -418,7 +425,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {Array.<string>} dependencies
      * @returns {Promise}
      */
-    installDependencies: function(dependencies) {
+    installDependencies(dependencies) {
         return Promises.promise((resolve, reject) => {
             if (dependencies.length > 0) {
                 npm.commands.install(dependencies, (error) => {
@@ -438,7 +445,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} dependency
      * @returns {boolean}
      */
-    isDependencyInstalled: function(dependency) {
+    isDependencyInstalled(dependency) {
         let result = false;
         if (this.dependencyCacheSet.contains(dependency)) {
             return true;
@@ -455,7 +462,7 @@ const GulpRecipe = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    loadNpm: function() {
+    loadNpm() {
         if (!this.npmLoadingPromise) {
             this.npmLoadingPromise = Promises.promise((resolve, reject) => {
                 npm.on('log', (message) => {
@@ -483,9 +490,9 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeVersion
      * @returns {Promise}
      */
-    loadRecipe: function(recipeName, recipeVersion) {
+    loadRecipe(recipeName, recipeVersion) {
         return Promises.try(() => {
-            let gulpRecipe = this.currentRecipeStore.getRecipe(recipeName);
+            let gulpRecipe = this.currentRecipeStore.getRecipe(recipeName, recipeVersion);
             if (!gulpRecipe) {
                 gulpRecipe = this.findAndDefineRecipe(recipeName);
             }
@@ -498,7 +505,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeIdentifier
      * @return {[string, string]}
      */
-    parseRecipeIdentifier: function(recipeIdentifier) {
+    parseRecipeIdentifier(recipeIdentifier) {
         if (recipeIdentifier.indexOf('@') > -1) {
             return recipeIdentifier.split('@');
         }
@@ -520,7 +527,7 @@ const GulpRecipe = Class.extend(Obj, {
      *      target: string
      * }}
      */
-    defineOptions: function(options, suppliedDefaults) {
+    defineOptions(options, suppliedDefaults) {
         options             = options || {};
         suppliedDefaults    = suppliedDefaults || {};
         const defaults      = {
@@ -537,7 +544,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {string} recipeVersionQuery
      * @returns {Promise}
      */
-    resolveRecipeVersionQuery: function(recipeVersionQuery) {
+    resolveRecipeVersionQuery(recipeVersionQuery) {
         //TODO BRN: resolve the query to the correct version for this query.
         return Promises.resolve(recipeVersionQuery);
     },
@@ -550,7 +557,7 @@ const GulpRecipe = Class.extend(Obj, {
      *      recipe: function(function(Error), *...)
      * }}
      */
-    tryFindRecipeObject: function(recipeName) {
+    tryFindRecipeObject(recipeName) {
         let recipeObject = null;
         try {
             recipeObject = fs.readFile(this.recipesDir + path.sep + recipeName + path.sep + 'recipe.json');
@@ -566,15 +573,33 @@ const GulpRecipe = Class.extend(Obj, {
 
 /**
  * @static
- * @type {function(new:Recipe)}
+ * @type {*}
  */
-GulpRecipe.Recipe         = Recipe;
+GulpRecipe.controllers  = controllers;
 
 /**
  * @static
- * @type {function(new:RecipeStore)}
+ * @type {*}
  */
-GulpRecipe.RecipeStore    = RecipeStore;
+GulpRecipe.core         = core;
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.data         = data;
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.entities     = entities;
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.util         = util;
 
 
 //-------------------------------------------------------------------------------
@@ -584,9 +609,9 @@ GulpRecipe.RecipeStore    = RecipeStore;
 /**
  * @static
  * @private
- * @type {BugCore}
+ * @type {GulpRecipe}
  */
-GulpRecipe.instance        = null;
+GulpRecipe.instance     = null;
 
 
 //-------------------------------------------------------------------------------
@@ -614,6 +639,7 @@ Proxy.proxy(GulpRecipe, Proxy.method(GulpRecipe.getInstance), [
     'configDelete',
     'configGet',
     'configSet',
+    'context',
     'define',
     'get',
     'login',

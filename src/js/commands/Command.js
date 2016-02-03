@@ -32,7 +32,7 @@ const Command = Class.extend(Obj, {
     /**
      * @abstract
      */
-    run: function() {
+    run() {
         throw Throwables.bug('AbstractMethodNotImplemented', {}, 'Must implement Command#run');
     },
 
@@ -46,7 +46,7 @@ const Command = Class.extend(Obj, {
      * @param {Object} schema
      * @return {Promise}
      */
-    prompt: function(schema) {
+    prompt(schema) {
         return new Promise((resolve, reject) => {
             prompt.start();
             prompt.get(schema, (error, result) => {
@@ -68,7 +68,7 @@ const Command = Class.extend(Obj, {
      * @param {string=} defaultTarget
      * @return {{target: string}}
      */
-    refineTargetOption: function(options, defaultTarget) {
+    refineTargetOption(options, defaultTarget) {
         let target = '';
         if (options.global) {
             target = 'global';

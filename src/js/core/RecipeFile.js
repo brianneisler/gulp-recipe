@@ -35,7 +35,7 @@ const RecipeFile = Class.extend(Obj, {
      * @param {string} filePath
      * @param {{}} data
      */
-    _constructor: function(filePath, data) {
+    _constructor(filePath, data) {
 
         this._super();
 
@@ -71,21 +71,21 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getFilePath: function() {
+    getFilePath() {
         return this.filePath;
     },
 
     /**
      * @return {string}
      */
-    getName: function() {
+    getName() {
         return this.name;
     },
 
     /**
      * @return {string}
      */
-    getVersion: function() {
+    getVersion() {
         return this.version;
     },
 
@@ -97,7 +97,7 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    toJson: function() {
+    toJson() {
         return JSON.stringify(this.toObject());
     },
 
@@ -109,7 +109,7 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @return {Object}
      */
-    toObject: function() {
+    toObject() {
         return {
             name: this.name,
             version: this.version
@@ -124,7 +124,7 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    saveToFile: function() {
+    saveToFile() {
         return Promises.try(() => {
             const json = this.toJson();
             const options = {

@@ -29,7 +29,7 @@ const RecipeStoreCache = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -53,7 +53,7 @@ const RecipeStoreCache = Class.extend(Obj, {
     /**
      * @return {Map.<string, Recipe>}
      */
-    getRecipeNameToRecipeMap: function() {
+    getRecipeNameToRecipeMap() {
         return this.recipeNameToRecipeMap;
     },
 
@@ -66,7 +66,7 @@ const RecipeStoreCache = Class.extend(Obj, {
      * @param {string} recipeName
      * @returns {Recipe}
      */
-    getRecipe: function(recipeName) {
+    getRecipe(recipeName) {
         return this.recipeNameToRecipeMap.get(recipeName);
     },
 
@@ -74,7 +74,7 @@ const RecipeStoreCache = Class.extend(Obj, {
      * @param {string} recipeName
      * @returns {boolean}
      */
-    hasRecipe: function(recipeName) {
+    hasRecipe(recipeName) {
         return this.recipeNameToRecipeMap.containsKey(recipeName);
     },
 
@@ -82,7 +82,7 @@ const RecipeStoreCache = Class.extend(Obj, {
      * @param {string} recipeName
      * @param {Recipe} recipe
      */
-    setRecipe: function(recipeName, recipe) {
+    setRecipe(recipeName, recipe) {
         this.recipeNameToRecipeMap.put(recipeName, recipe);
     }
 });

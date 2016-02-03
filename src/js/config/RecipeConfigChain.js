@@ -30,13 +30,17 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
      * @param {{
      *  builtIn: RecipeConfig,
      *  global: RecipeConfig,
+     *  override: Config,
      *  project: RecipeConfig,
      *  user: RecipeConfig
      * }} configs
      * @param {string} target
      */
-    _constructor: function(configs, target) {
+    _constructor(configs, target) {
         const configArray = [];
+        if (configs.override) {
+            configArray.push(configs.override);
+        }
         if (configs.project) {
             configArray.push(configs.project);
         }
@@ -66,6 +70,12 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
 
         /**
          * @private
+         * @type {Config}
+         */
+        this.overrideConfig     = configs.override;
+
+        /**
+         * @private
          * @type {RecipeConfig}
          */
         this.projectConfig      = configs.project;
@@ -91,35 +101,42 @@ const RecipeConfigChain = Class.extend(ConfigChain, {
     /**
      * @return {RecipeConfig}
      */
-    getBuiltInConfig: function() {
+    getBuiltInConfig() {
         return this.builtInConfig;
     },
 
     /**
      * @return {RecipeConfig}
      */
-    getGlobalConfig: function() {
+    getGlobalConfig() {
         return this.globalConfig;
+    },
+
+    /**
+     * @return {Config}
+     */
+    getOverrideConfig() {
+        return this.overrideConfig;
     },
 
     /**
      * @return {RecipeConfig}
      */
-    getProjectConfig: function() {
+    getProjectConfig() {
         return this.projectConfig;
     },
 
     /**
      * @return {RecipeConfig}
      */
-    getTargetConfig: function() {
+    getTargetConfig() {
         return this.targetConfig;
     },
 
     /**
      * @return {RecipeConfig}
      */
-    getUserConfig: function() {
+    getUserConfig() {
         return this.userConfig;
     }
 });

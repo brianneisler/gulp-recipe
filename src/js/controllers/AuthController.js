@@ -15,9 +15,9 @@ import ConfigController from './ConfigController';
 import ContextController from './ContextController';
 import CurrentUser from '../data/CurrentUser';
 import Firebase from '../util/Firebase';
-import User from '../firebase/User';
+import User from '../entities/User';
 import UserData from '../data/UserData';
-import Username from '../firebase/fields/Username';
+import Username from '../entities/fields/Username';
 
 
 //-------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -64,7 +64,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @return {Map.<RecipeContext, CurrentUser>}
      */
-    getContextToCurrentUserMap: function() {
+    getContextToCurrentUserMap() {
         return this.contextToCurrentUserMap;
     },
 
@@ -76,7 +76,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    auth: function() {
+    auth() {
         return this.getCurrentUser()
             .then((currentUser) => {
                 return this.authWithToken(currentUser.getAuthData().getToken());
@@ -86,7 +86,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @returns {Promise<CurrentUser>}
      */
-    getCurrentUser: function() {
+    getCurrentUser() {
         const context = ContextController.getCurrentContext();
         const currentUser = this.contextToCurrentUserMap.get(context);
         if (!currentUser) {
@@ -103,7 +103,7 @@ const AuthController = Class.extend(Obj, {
      * @param {string} password
      * @return {Promise}
      */
-    login: function(email, password) {
+    login(email, password) {
         return this.authWithPassword(email, password)
             .then((authData) => {
                 return this.buildCurrentUserWithAuthData(authData);
@@ -116,7 +116,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @return {Promise}
      */
-    logout: function() {
+    logout() {
         return this.unauth()
             .then(() => {
                 return this.deleteCurrentUser();
@@ -129,7 +129,7 @@ const AuthController = Class.extend(Obj, {
      * @param {string} password
      * @return {Promise}
      */
-    signUp: function(username, email, password) {
+    signUp(username, email, password) {
         // TODO BRN: Validate username, email, password
         email       = email.toLowerCase();
         username    = username.toLowerCase();
@@ -170,7 +170,7 @@ const AuthController = Class.extend(Obj, {
      * @param {string} username
      * @return {Promise}
      */
-    completeSignupWithUsername: function(user, username) {
+    completeSignupWithUsername(user, username) {
         return Username.changeUsersUsername(user, username)
             .then(() => {
                 return User.update(user.id, {
@@ -190,7 +190,7 @@ const AuthController = Class.extend(Obj, {
      * @param {string} password
      * @return {Promise}
      */
-    authWithPassword: function(email, password) {
+    authWithPassword(email, password) {
         return Firebase.authWithPassword({
             email: email,
             password: password
@@ -204,7 +204,7 @@ const AuthController = Class.extend(Obj, {
      * @param {string} token
      * @return {Promise}
      */
-    authWithToken: function(token) {
+    authWithToken(token) {
         return Firebase.authWithCustomToken(token)
             .then((data) => {
                 return new AuthData(data);
@@ -216,7 +216,7 @@ const AuthController = Class.extend(Obj, {
      * @param {AuthData} authData
      * @return {Promise}
      */
-    buildCurrentUserWithAuthData: function(authData) {
+    buildCurrentUserWithAuthData(authData) {
         return User.get(authData.getUid())
             .then((snapshot) => {
                 const userData = new UserData(snapshot.val());
@@ -228,7 +228,7 @@ const AuthController = Class.extend(Obj, {
      * @private
      * @return {Promise}
      */
-    deleteAuthData: function() {
+    deleteAuthData() {
         return ConfigController.deleteConfigProperty('auth');
     },
 
@@ -236,7 +236,7 @@ const AuthController = Class.extend(Obj, {
      * @private
      * @return {Promise}
      */
-    deleteCurrentUser: function() {
+    deleteCurrentUser() {
         const context = ContextController.getCurrentContext();
         return this.deleteAuthData()
             .then(() => {
@@ -247,7 +247,7 @@ const AuthController = Class.extend(Obj, {
     /**
      * @private
      */
-    getAuthData: function() {
+    getAuthData() {
         return ConfigController.getConfigProperty('auth')
             .then((data) => {
                 if (!data) {
@@ -262,7 +262,7 @@ const AuthController = Class.extend(Obj, {
      * @param {AuthData} authData
      * @returns {Promise}
      */
-    setAuthData: function(authData) {
+    setAuthData(authData) {
         return ConfigController.setConfigProperty('auth', authData.toObject());
     },
 
@@ -271,7 +271,7 @@ const AuthController = Class.extend(Obj, {
      * @param {CurrentUser} currentUser
      * @returns {Promise}
      */
-    setCurrentUser: function(currentUser) {
+    setCurrentUser(currentUser) {
         const context = ContextController.getCurrentContext();
         return this.setAuthData(currentUser.getAuthData())
             .then(() => {
@@ -284,7 +284,7 @@ const AuthController = Class.extend(Obj, {
      * @private
      * @return {Promise}
      */
-    unauth: function() {
+    unauth() {
         return Promises.try(() => {
             return Firebase.unauth();
         });

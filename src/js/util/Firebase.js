@@ -33,7 +33,7 @@ const Firebase = Class.extend(Obj, {
      * @constructs
      * @param {*} value
      */
-    _constructor: function(value) {
+    _constructor(value) {
 
         this._super();
 
@@ -66,7 +66,7 @@ const Firebase = Class.extend(Obj, {
      * @method Firebase#getRef
      * @return {firebase}
      */
-    getRef: function() {
+    getRef() {
         return this._ref;
     },
 
@@ -80,7 +80,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      * @param {{}} options
      */
-    authWithCustomToken: function(authToken, onComplete, options) {
+    authWithCustomToken(authToken, onComplete, options) {
         this._ref.authWithCustomToken(authToken, onComplete, options);
     },
 
@@ -91,7 +91,7 @@ const Firebase = Class.extend(Obj, {
      * }} credentials
      * @param {function=} onComplete
      */
-    authWithPassword: function(credentials, onComplete) {
+    authWithPassword(credentials, onComplete) {
         this._ref.authWithPassword(credentials, onComplete);
     },
 
@@ -102,14 +102,14 @@ const Firebase = Class.extend(Obj, {
      * }} credentials
      * @param {function=} onComplete
      */
-    createUser: function(credentials, onComplete) {
+    createUser(credentials, onComplete) {
         this._ref.createUser(credentials, onComplete);
     },
 
     /**
      * @return {*}
      */
-    key: function() {
+    key() {
         return this._ref.key();
     },
 
@@ -119,7 +119,7 @@ const Firebase = Class.extend(Obj, {
      * @param failureCallback
      * @param context
      */
-    once: function(eventType, successCallback, failureCallback, context) {
+    once(eventType, successCallback, failureCallback, context) {
         this._ref.once(eventType, successCallback, failureCallback, context);
     },
 
@@ -127,7 +127,7 @@ const Firebase = Class.extend(Obj, {
      * @method Firebase#proof
      * @return {Promise}
      */
-    proof: function() {
+    proof() {
         return new Fireproof(this);
     },
 
@@ -137,7 +137,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      * @return {Firebase}
      */
-    push: function(value, onComplete) {
+    push(value, onComplete) {
         const ref = this._ref.push(value, onComplete);
         return new Firebase(ref);
     },
@@ -146,7 +146,7 @@ const Firebase = Class.extend(Obj, {
      * @method Firebase#ref
      * @return {firebase}
      */
-    ref: function() {
+    ref() {
         return this._ref;
     },
 
@@ -154,7 +154,7 @@ const Firebase = Class.extend(Obj, {
      * @method Firebase#remove
      * @param {function=} onComplete
      */
-    remove: function(onComplete) {
+    remove(onComplete) {
         this._ref.remove(onComplete);
     },
 
@@ -163,7 +163,7 @@ const Firebase = Class.extend(Obj, {
      * @param {*} value
      * @param {function=} onComplete
      */
-    set: function(value, onComplete) {
+    set(value, onComplete) {
         this._ref.set(value, onComplete);
     },
 
@@ -173,14 +173,14 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      * @param {boolean=} applyLocally
      */
-    transaction: function(updateFunction, onComplete, applyLocally) {
+    transaction(updateFunction, onComplete, applyLocally) {
         this._ref.transaction(updateFunction, onComplete, applyLocally);
     },
 
     /**
      * @return {*}
      */
-    unauth: function() {
+    unauth() {
         return this._ref.unauth();
     },
 
@@ -189,7 +189,7 @@ const Firebase = Class.extend(Obj, {
      * @param {Object} value
      * @param {function=} onComplete
      */
-    update: function(value, onComplete) {
+    update(value, onComplete) {
         this._ref.update(value, onComplete);
     }
 });
@@ -266,6 +266,14 @@ Firebase.proof = function(ref) {
  */
 Firebase.ref = function(ref) {
     return (new Firebase(ref)).ref();
+};
+
+/**
+ * @static
+ * @returns {number}
+ */
+Firebase.timestamp = function() {
+    return firebase.ServerValue.TIMESTAMP;
 };
 
 /**

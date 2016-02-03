@@ -32,7 +32,7 @@ const UserData = Class.extend(Obj, {
      *      id: string
      * }} data
      */
-    _constructor: function(data) {
+    _constructor(data) {
 
         this._super();
 
@@ -56,7 +56,7 @@ const UserData = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getId: function() {
+    getId() {
         return this.id;
     },
 
@@ -68,7 +68,7 @@ const UserData = Class.extend(Obj, {
     /**
      * @return {Object}
      */
-    toObject: function() {
+    toObject() {
         return {
             id: this.id
         };

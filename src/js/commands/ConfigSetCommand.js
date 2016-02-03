@@ -40,7 +40,7 @@ const ConfigSetCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run: function(key, value, options) {
+    run(key, value, options) {
         return Promises.try(() => {
             options = this.refineTargetOption(options, 'project');
             if (options.bool) {

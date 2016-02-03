@@ -31,7 +31,7 @@ const AuthData = Class.extend(Obj, {
      * @constructs
      * @param {{}} data
      */
-    _constructor: function(data) {
+    _constructor(data) {
 
         this._super();
 
@@ -61,14 +61,14 @@ const AuthData = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getToken: function() {
+    getToken() {
         return this.token;
     },
 
     /**
      * @return {string}
      */
-    getUid: function() {
+    getUid() {
         return this.uid;
     },
 
@@ -80,7 +80,7 @@ const AuthData = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    toJson: function() {
+    toJson() {
         return JSON.stringify(this.toObject());
     },
 
@@ -92,7 +92,7 @@ const AuthData = Class.extend(Obj, {
     /**
      * @return {Object}
      */
-    toObject: function() {
+    toObject() {
         return {
             token: this.token,
             uid: this.uid

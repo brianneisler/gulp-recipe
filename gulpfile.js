@@ -10,7 +10,7 @@ const eslint        = require('gulp-eslint');
 const jest          = require('gulp-jest-iojs');
 const recipe        = require('gulp-recipe');
 const sourcemaps    = require('gulp-sourcemaps');
-const gulpUtil      = require('gulp-util');
+const util          = require('gulp-util');
 
 
 //-------------------------------------------------------------------------------
@@ -37,12 +37,17 @@ gulp.task('dev', ['babel', 'lint', 'babel-watch', 'lint-watch']);
 
 gulp.task('babel', function() {
     return gulp.src(sources.babel)
-        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(sourcemaps.init({
+            loadMaps: true
+        }))
         .pipe(babel({
             presets: ['es2015']
         }))
         .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('./dist'));
+        .pipe(gulp.dest('./dist'))
+        .on('error', function(error) {
+            util.log(error);
+        });
 });
 
 gulp.task('lint', recipe.get('eslint', [
@@ -68,9 +73,10 @@ gulp.task('lint-watch', function() {
     return gulp.watch('src/**/*.js', function(event) {
         if (event.type !== 'deleted') {
             gulp.src(event.path)
-                .pipe(lintAndPrint, {end: false});
+                .pipe(lintAndPrint, {end: false})
+                .on('error', function(error) {
+                    util.log(error);
+                });
         }
     });
 });
-
-

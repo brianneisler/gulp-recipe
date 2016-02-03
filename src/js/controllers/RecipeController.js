@@ -11,21 +11,17 @@ import {
     Throwables,
     TypeUtil
 } from 'bugcore';
-import _ from 'lodash';
-import crypto from 'crypto';
-import fs from 'fs-promise';
-import fse from 'fs-extra';
-import ignore from 'ignore';
 import path from 'path';
-import stream from 'stream';
-import tar from 'tar-fs';
-import zlib from 'zlib';
+import request from 'request';
 import AuthController from './AuthController';
-import Recipe from '../firebase/Recipe';
+import ConfigController from './ConfigController';
+import PublishKey from '../entities/PublishKey';
+import PublishKeyData from '../data/PublishKeyData';
+import Recipe from '../entities/Recipe';
 import RecipeData from '../data/RecipeData';
 import RecipeFile from '../core/RecipeFile';
 import RecipePackage from '../core/RecipePackage';
-import RecipeVersion from '../firebase/RecipeVersion';
+import RecipeVersion from '../entities/RecipeVersion';
 import RecipeVersionData from '../data/RecipeVersionData';
 
 
@@ -49,7 +45,7 @@ const RecipeController = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -74,7 +70,7 @@ const RecipeController = Class.extend(Obj, {
      * @param {string} recipePath
      * @return {Promise<RecipeFile>}
      */
-    loadRecipeFile: function(recipePath) {
+    loadRecipeFile(recipePath) {
         const recipeFilePath = path.resolve(recipePath, RecipeController.RECIPE_FILE_NAME);
         const recipeFile = this.recipeFileCache.get(recipeFilePath);
         if (!recipeFile) {
@@ -88,22 +84,18 @@ const RecipeController = Class.extend(Obj, {
     },
 
     /**
-     * @param {RecipeFile} recipeFile
+     * @param {string} recipePath
      * @return {Promise<RecipePackage>}
      */
-    packageRecipe: function(recipeFile) {
-        const recipePath = path.dirname(recipeFile.getFilePath());
-        return this.findPackagePaths(recipePath)
-            .then((packagePaths) => {
-                return this.doPackageRecipe(recipeFile, packagePaths);
-            });
+    packageRecipe(recipePath) {
+        return RecipePackage.fromPath(recipePath);
     },
 
     /**
      * @param {string} recipePath
      * @return {Promise}
      */
-    publishRecipe: function(recipePath) {
+    publishRecipe(recipePath) {
         return AuthController.auth()
             .then(() => {
                 return this.loadRecipeFile(recipePath);
@@ -112,49 +104,50 @@ const RecipeController = Class.extend(Obj, {
                 return this.validateNewRecipe(recipeFile);
             })
             .then((recipeFile) => {
-                return this.packageRecipe(recipeFile);
-            })
-            .then((recipePackage) => {
-                return this.ensureRecipeCreated(recipePackage.getRecipeFile().getName())
-                    .then((recipeData) => {
-                        return [recipeData, recipePackage];
+                return this.packageRecipe(recipePath)
+                    .then((recipePackage) => {
+                        return [recipeFile, recipePackage];
                     });
             })
             .then((results) => {
-                const [recipeData, recipePackage] = results;
+                const [recipeFile, recipePackage] = results;
+                return this.ensureRecipeCreated(recipeFile.getName())
+                    .then((recipeData) => {
+                        return [recipeFile, recipePackage, recipeData];
+                    });
+            })
+            .then((results) => {
+                const [recipeFile, recipePackage, recipeData] = results;
                 return this.verifyCurrentUserAccessToRecipe(recipeData)
                     .then(() => {
-                        return [recipeData, recipePackage];
+                        return [recipeFile, recipePackage];
                     });
             })
             .then((results) => {
-                const [recipeData, recipePackage] = results;
-                return this.createRecipeVersion(recipeData, recipePackage);
+                const [recipeFile, recipePackage] = results;
+                return this.ensureRecipeVersionCreated(recipeFile)
+                    .then(() => {
+                        return [recipeFile, recipePackage];
+                    });
             })
-            .catch((error) => {
-                console.log(error);
-                console.log(error.stack);
+            .then((results) => {
+                const [recipeFile, recipePackage] = results;
+                return this.createPublishKey(recipeFile, recipePackage)
+                    .then((publishKeyData) => {
+                        return [recipePackage, publishKeyData];
+                    });
+            })
+            .then((results) => {
+                const [recipePackage, publishKeyData] = results;
+                console.log('publishing ' + publishKeyData.getRecipeName() + '@' + publishKeyData.getRecipeVersionNumber());
+                return this.uploadRecipePackage(recipePackage, publishKeyData)
+                    .then(() => {
+                        return publishKeyData;
+                    });
             });
-
-        // TODO
-        // Generate publish key for recipe version
-        // - has recipeName
-        // - has recipeVersionNumber
-        // - has tarball hash
-        // Upload recipe tarball to recipe server using publish key and tarball hash
-
-        //TODO RecipeServer
-        // retrieve recipeVersion based on publish key
-        // validate tarball hash
-        // validate recipe name
-        // validate recipe version
-        // validate recipeVersion has not already been published
-        // name of file is [recipeName]-[recipeVersion].tgz
-        // upload tarball to S3 at path [S3]/[recipeName]/[recipeVersion]/[recipeName]-[recipeVersion].tgz
-        //
     },
 
-    unpackageRecipe: function(packagePath) {
+    unpackageRecipe(packagePath) {
 
     },
 
@@ -162,13 +155,16 @@ const RecipeController = Class.extend(Obj, {
      * @param {RecipeFile} recipeFile
      * @return {Promise<RecipeFile>}
      */
-    validateNewRecipe: function(recipeFile) {
+    validateNewRecipe(recipeFile) {
         return Promises.try(() => {
             this.validateRecipe(recipeFile);
             return RecipeVersion.get(recipeFile.getName(), recipeFile.getVersion())
                 .then((snapshot) => {
                     if (snapshot.exists()) {
-                        throw Throwables.exception('RecipeVersionExists', {}, 'Recipe ' + recipeFile.getName() + '@' + recipeFile.getVersion() + ' has already been published');
+                        const data = snapshot.val();
+                        if (data.published) {
+                            throw Throwables.exception('RecipeVersionExists', {}, 'Recipe ' + recipeFile.getName() + '@' + recipeFile.getVersion() + ' has already been published');
+                        }
                     }
                     return recipeFile;
                 });
@@ -178,7 +174,7 @@ const RecipeController = Class.extend(Obj, {
     /**
      * @param {RecipeFile} recipeFile
      */
-    validateRecipe: function(recipeFile) {
+    validateRecipe(recipeFile) {
         this.validateRecipeName(recipeFile.getName());
         this.validateRecipeVersion(recipeFile.getVersion());
     },
@@ -190,12 +186,28 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @private
+     * @param {RecipeFile} recipeFile
+     * @param {RecipePackage} recipePackage
+     * @return {Promise<PublishKeyData>}
+     */
+    createPublishKey(recipeFile, recipePackage) {
+        return PublishKey.create({
+            recipeHash: recipePackage.getRecipeHash(),
+            recipeName: recipeFile.getName(),
+            recipeVersionNumber: recipeFile.getVersion()
+        }).then((data) => {
+            return new PublishKeyData(data);
+        });
+    },
+
+    /**
+     * @private
      * @param {{
      *      name: string
      * }} data
      * @return {Promise<RecipeData>}
      */
-    createRecipe: function(data) {
+    createRecipe(data) {
         return AuthController.getCurrentUser()
             .then((currentUser) => {
                 return Recipe.create(data, currentUser.getUserData())
@@ -207,56 +219,17 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @private
-     * @param {RecipeData} recipeData
-     * @param {RecipePackage} recipePackage
+     * @param {string} recipeName
+     * @param {{
+     *      versionNumber: string,
+     * }} data
      * @return {Promise<RecipeVersionData>}
      */
-    createRecipeVersion: function(recipeData, recipePackage) {
-        return RecipeVersion.create(recipeData.getName(), {
-            versionNumber: recipePackage.getRecipeFile().getVersion()
-        }).then((data) => {
-            return new RecipeVersionData(data);
-        });
-    },
-
-    /**
-     * @private
-     * @param {RecipeFile} recipeFile
-     * @param {Array.<string>} packagePaths
-     * @return {Promise<RecipePackage>}
-     */
-    doPackageRecipe: function(recipeFile, packagePaths) {
-        const recipePath = path.dirname(recipeFile.getFilePath());
-        return Promises.try(() => {
-            return _.map(packagePaths, (packagePath) => {
-                return path.relative(recipePath, packagePath);
+    createRecipeVersion(recipeName, data) {
+        return RecipeVersion.create(recipeName, data)
+            .then((newData) => {
+                return new RecipeVersionData(newData);
             });
-        }).then((relativePackagePaths) => {
-            return Promises.promise((resolve, reject) => {
-                const gzip = zlib.createGzip();
-                const hash = crypto.createHash('sha1');
-                hash.setEncoding('hex');
-                const recipeStream = tar.pack(recipePath, {
-                    entries: relativePackagePaths
-                });
-                const pass = new stream.PassThrough();
-                let caughtError = null;
-                const gzipStream = recipeStream.pipe(gzip);
-                gzipStream
-                    .on('error', (error) => {
-                        caughtError = error;
-                    })
-                    .on('end', () => {
-                        if (caughtError) {
-                            return reject(caughtError);
-                        }
-                        hash.end();
-                        return resolve(new RecipePackage(recipeFile, pass, hash.read()));
-                    });
-                gzipStream.pipe(hash);
-                gzipStream.pipe(pass);
-            });
-        });
     },
 
     /**
@@ -264,7 +237,7 @@ const RecipeController = Class.extend(Obj, {
      * @param {string} recipeName
      * @return {Promise<RecipeData>}
      */
-    ensureRecipeCreated: function(recipeName) {
+    ensureRecipeCreated(recipeName) {
         return Recipe.get(recipeName)
             .then((snapshot) => {
                 if (!snapshot.exists()) {
@@ -276,47 +249,55 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @private
-     * @param {string} recipePath
-     * @return {Promise.<Array<string>>}
+     * @param {RecipeFile} recipeFile
+     * @return {Promise<RecipeVersionData>}
      */
-    findPackagePaths: function(recipePath) {
-        return Promises.all([
-            this.loadIgnores(recipePath),
-            this.walkRecipePath(recipePath)
-        ]).then((results) => {
-            const [ignores, recipePaths] = results;
-            return ignore()
-                .addPattern(ignores)
-                .filter(recipePaths);
-        });
+    ensureRecipeVersionCreated(recipeFile) {
+        return RecipeVersion.get(recipeFile.getName(), recipeFile.getVersion())
+            .then((snapshot) => {
+                if (!snapshot.exists()) {
+                    return this.createRecipeVersion(recipeFile.getName(), {
+                        versionNumber: recipeFile.getVersion()
+                    });
+                }
+                return new RecipeVersionData(snapshot.val());
+            });
     },
 
     /**
      * @private
-     * @param {string} recipePath
-     * @return {Promise<Array<string>>}
+     * @param {RecipePackage} recipePackage
+     * @param {PublishKeyData} publishKeyData
      */
-    loadIgnores: function(recipePath) {
-        return fs.readFile(path.resolve(recipePath, RecipeController.IGNORE_FILE_NAME), 'utf8')
-            .then((data) => {
-                return data.split('\n');
-            })
-            .catch((error) => {
-                if (error.code !== 'ENOENT') {
-                    throw error;
-                }
-                return [];
-            })
-            .then((ignores) => {
-                return ignores.concat(RecipeController.DEFAULT_IGNORES);
+    uploadRecipePackage(recipePackage, publishKeyData) {
+        return Promises.props({
+            debug: ConfigController.getConfigProperty('debug'),
+            serverUrl: ConfigController.getConfigProperty('serverUrl')
+        }).then((config) => {
+            return Promises.promise((resolve, reject) => {
+                const req = request.post(config.serverUrl + '/api/v1/publish', {
+                    auth: {
+                        bearer: publishKeyData.getKey()
+                    }
+                });
+                req.on('error', (error) => {
+                    reject(error);
+                }).on('response', (response) => {
+                    if (response.statusCode === 200) {
+                        return resolve();
+                    }
+                    return reject(new Throwables.exception('UPLOAD_ERROR', {}, 'Package upload error'));
+                });
+                recipePackage.pipe(req);
             });
+        });
     },
 
     /**
      * @private
      * @param {string} recipeName
      */
-    validateRecipeName: function(recipeName) {
+    validateRecipeName(recipeName) {
         if (!TypeUtil.isString(recipeName)) {
             throw Throwables.exception('RecipeInvalid', {}, 'Recipe name must be a string');
         }
@@ -329,7 +310,7 @@ const RecipeController = Class.extend(Obj, {
      * @private
      * @param {string} recipeVersion
      */
-    validateRecipeVersion: function(recipeVersion) {
+    validateRecipeVersion(recipeVersion) {
         if (!TypeUtil.isString(recipeVersion)) {
             throw Throwables.exception('RecipeInvalid', {}, 'Recipe version must be a string');
         }
@@ -343,37 +324,13 @@ const RecipeController = Class.extend(Obj, {
      * @param {RecipeData} recipeData
      * @return {Promise}
      */
-    verifyCurrentUserAccessToRecipe: function(recipeData) {
+    verifyCurrentUserAccessToRecipe(recipeData) {
         return AuthController.getCurrentUser()
             .then((currentUser) => {
                 if (!recipeData.getCollaborators()[currentUser.getUserData().getId()]) {
                     throw Throwables.exception('AccessDenied', {}, 'User does not have access to publish to recipe "' + recipeData.getName() + '"');
                 }
             });
-    },
-
-    /**
-     * @private
-     * @param {string} recipePath
-     * @return {Promise<Array<string>>}
-     */
-    walkRecipePath: function(recipePath) {
-        return Promises.promise((resolve, reject) => {
-            const items = [];
-            fse.walk(recipePath)
-                .on('data', (item) => {
-                    if (item.path !== recipePath) {
-                        items.push(item.path);
-                    }
-                })
-                .on('error', function (err, item) {
-                    console.log(err.message);
-                    console.log('error reading ', item.path);
-                })
-                .on('end', () => {
-                    resolve(items);
-                });
-        });
     }
 });
 
@@ -393,35 +350,7 @@ RecipeController.instance        = null;
  * @static
  * @enum {string}
  */
-RecipeController.IGNORE_FILE_NAME = '.recipeignore';
-
-/**
- * @static
- * @enum {string}
- */
 RecipeController.RECIPE_FILE_NAME = 'recipe.json';
-
-/**
- * @static
- * @private
- * @type {Array.<string>}
- */
-RecipeController.DEFAULT_IGNORES = [
-    '.*.swp',
-    '._*',
-    '.DS_Store',
-    '.git',
-    '.hg',
-    '.npmrc',
-    '.lock-wscript',
-    '.svn',
-    '.wafpickle-*',
-    'config.gypi',
-    'CVS',
-    'npm-debug.log',
-    'node_modules',
-    'recipes'
-];
 
 
 //-------------------------------------------------------------------------------

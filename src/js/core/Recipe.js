@@ -31,7 +31,7 @@ const Recipe = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -92,7 +92,7 @@ const Recipe = Class.extend(Obj, {
      * }} recipeObject
      * @return {Recipe}
      */
-    init: function(recipeStore, recipeObject) {
+    init(recipeStore, recipeObject) {
         const _this = this._super();
         if (_this) {
             if (!recipeStore) {
@@ -129,42 +129,42 @@ const Recipe = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getMain: function() {
+    getMain() {
         return this.main;
     },
 
     /**
      * @return {string}
      */
-    getName: function() {
+    getName() {
         return this.name;
     },
 
     /**
      * @return {Object.<string, string>}
      */
-    getNpmDependencies: function() {
+    getNpmDependencies() {
         return this.npmDependencies;
     },
 
     /**
      * @return {function(function(Error), *)}
      */
-    getRecipeMethod: function() {
+    getRecipeMethod() {
         return this.recipeMethod;
     },
 
     /**
      * @return {RecipeStore}
      */
-    getRecipeStore: function() {
+    getRecipeStore() {
         return this.recipeStore;
     },
 
     /**
      * @return {string}
      */
-    getVersion: function() {
+    getVersion() {
         return this.version;
     },
 
@@ -176,7 +176,7 @@ const Recipe = Class.extend(Obj, {
     /**
      * @param {Array.<*>} recipeArgs
      */
-    runRecipe: function(recipeArgs) {
+    runRecipe(recipeArgs) {
         if (!this.recipeMethod) {
             this.recipeMethod = require(path.resolve(this.recipeStore.getRecipesDir(), this.name, this.main));
         }

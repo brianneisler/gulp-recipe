@@ -31,7 +31,7 @@ const RecipeContext = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -77,7 +77,7 @@ const RecipeContext = Class.extend(Obj, {
      * }=} options
      * @return {RecipeContext}
      */
-    init: function(options) {
+    init(options) {
         const _this = this._super();
         if (_this) {
             if (TypeUtil.isObject(options) && TypeUtil.isString(options.execPath)) {
@@ -108,28 +108,28 @@ const RecipeContext = Class.extend(Obj, {
     /**
      * @return {string}
      */
-    getExecPath: function() {
+    getExecPath() {
         return this.execPath;
     },
 
     /**
      * @return {string}
      */
-    getModulePath: function() {
+    getModulePath() {
         return this.modulePath;
     },
 
     /**
      * @return {string}
      */
-    getTarget: function() {
+    getTarget() {
         return this.target;
     },
 
     /**
      * @return {string}
      */
-    getUserPath: function() {
+    getUserPath() {
         return this.userPath;
     },
 
@@ -143,7 +143,7 @@ const RecipeContext = Class.extend(Obj, {
      * @param {*} value
      * @return {boolean}
      */
-    equals: function(value) {
+    equals(value) {
         if (Class.doesExtend(value, RecipeContext)) {
             return (
                 Obj.equals(value.getModulePath(), this.modulePath) &&
@@ -159,7 +159,7 @@ const RecipeContext = Class.extend(Obj, {
      * @override
      * @return {number}
      */
-    hashCode: function() {
+    hashCode() {
         if (!this._hashCode) {
             this._hashCode = Obj.hashCode('[RecipeContext]' +
                 Obj.hashCode(this.modulePath) + '_' +

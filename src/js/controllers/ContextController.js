@@ -31,7 +31,7 @@ const ContextController = Class.extend(Obj, {
     /**
      * @constructs
      */
-    _constructor: function() {
+    _constructor() {
 
         this._super();
 
@@ -55,7 +55,7 @@ const ContextController = Class.extend(Obj, {
     /**
      * @return {RecipeContext}
      */
-    getCurrentContext: function() {
+    getCurrentContext() {
         if (!this.currentContext) {
             throw Throwables.exception('NoCurrentContext', {}, 'Must first establishContext before getting current context');
         }
@@ -69,7 +69,7 @@ const ContextController = Class.extend(Obj, {
      * }=} options
      * @return {RecipeContext}
      */
-    establishContext: function(options) {
+    establishContext(options) {
         if (!this.currentContext) {
             this.currentContext = new RecipeContext(options);
         } else {

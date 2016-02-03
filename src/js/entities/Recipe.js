@@ -6,7 +6,7 @@ import {
     Class,
     ObjectUtil
 } from 'bugcore';
-import firebase from 'firebase';
+import Firebase from '../util/Firebase';
 import Entity from './Entity';
 
 
@@ -39,15 +39,17 @@ const Recipe = Class.extend(Entity, {
 Recipe.create = function(recipeData, userData) {
     const userId = userData.getId();
     ObjectUtil.assign(recipeData, {
-        lastPublishedVersion: '',
         collaborators: {
             [userId]: {
-                createdAt: firebase.ServerValue.TIMESTAMP,
+                createdAt: Firebase.timestamp(),
                 owner: true,
-                updatedAt: firebase.ServerValue.TIMESTAMP,
+                updatedAt: Firebase.timestamp(),
                 userId: userId
             }
-        }
+        },
+        lastPublishedVersion: '',
+        scope: 'public',
+        type: 'gulp'
     });
     return Recipe.set(recipeData)
         .then(() => {
@@ -69,12 +71,14 @@ Recipe.get = function(recipeName) {
  * @static
  * @param {{
  *  lastPublishedVersion: string,
- *  name: string
+ *  name: string,
+ *  scope: string,
+ *  type: string
  * }} recipe
  * @returns {Promise}
  */
 Recipe.set = function(recipe) {
-    return (new Recipe(['recipes', 'gulp', 'public', recipe.name]))
+    return (new Recipe(['recipes', recipe.type, recipe.scope, recipe.name]))
         .proof()
         .set(recipe);
 };
