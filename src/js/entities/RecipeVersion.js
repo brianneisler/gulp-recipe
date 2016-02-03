@@ -38,6 +38,7 @@ const RecipeVersion = Class.extend(Entity, {
 RecipeVersion.create = function(recipeName, data) {
     ObjectUtil.assign(data, {
         published: false,
+        recipeHash: '',
         recipeUrl: ''
     });
     return RecipeVersion.set(recipeName, data)
@@ -82,6 +83,22 @@ RecipeVersion.set = function(recipeName, data) {
     return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(data.versionNumber, '.', '-')]))
         .proof()
         .set(data);
+};
+
+/**
+ * @static
+ * @param {string} recipeName
+ * @param {string} versionNumber
+ * @param {{
+ *      published: boolean,
+ *      recipeUrl: string
+ * }} updates
+ * @return {Promise}
+ */
+RecipeVersion.update = function(recipeName, versionNumber, updates) {
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
+        .proof()
+        .update(updates);
 };
 
 
