@@ -43,7 +43,7 @@ const ConfigGetCommand = Class.extend(Command, {
             return GulpRecipe.configGet(key, options)
                 .then((returnedValue) => {
                     if (returnedValue !== undefined) {
-                        console.log('config - key:\'' + key + '\' value:' + '\'' + returnedValue + '\'');
+                        console.log('config - key:"' + key + '" value:' + JSON.stringify(returnedValue));
                     } else {
                         console.log('No config value found for key \'' + key + '\'');
                     }

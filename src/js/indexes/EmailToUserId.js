@@ -16,8 +16,8 @@ import Firebase from '../util/Firebase';
  * @class
  * @extends {Firebase}
  */
-const IndexUsernameToUserId = Class.extend(Firebase, {
-    _name: 'recipe.IndexUsernameToUserId'
+const EmailToUserId = Class.extend(Firebase, {
+    _name: 'recipe.EmailToUserId'
 });
 
 
@@ -27,33 +27,33 @@ const IndexUsernameToUserId = Class.extend(Firebase, {
 
 /**
  * @static
- * @param {string} username
+ * @param {string} email
  * @return {Fireproof}
  */
-IndexUsernameToUserId.getUserIdForUsername = function(username) {
-    return (new IndexUsernameToUserId(['indexUsernameToUserId', username]))
+EmailToUserId.getUserIdForEmail = function(email) {
+    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
         .proof();
 };
 
 /**
  * @static
- * @param {string} username
+ * @param {string} email
  * @return {Promise}
  */
-IndexUsernameToUserId.removeUserIdForUsername = function(username) {
-    return (new IndexUsernameToUserId(['indexUsernameToUserId', username]))
+EmailToUserId.removeUserIdForEmail = function(email) {
+    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
         .proof()
         .remove();
 };
 
 /**
  * @static
- * @param {string} username
+ * @param {string} email
  * @param {string} userId
  * @returns {Promise}
  */
-IndexUsernameToUserId.setUserIdForUsername = function(username, userId) {
-    return (new IndexUsernameToUserId(['indexUsernameToUserId', username]))
+EmailToUserId.setUserIdForEmail = function(email, userId) {
+    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
         .proof()
         .set(userId);
 };
@@ -63,4 +63,4 @@ IndexUsernameToUserId.setUserIdForUsername = function(username, userId) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default IndexUsernameToUserId;
+export default EmailToUserId;

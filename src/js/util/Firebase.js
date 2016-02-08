@@ -5,6 +5,7 @@
 import {
     Class,
     Obj,
+    StringBuilder,
     TypeUtil
 } from 'bugcore';
 import firebase from 'Firebase';
@@ -243,6 +244,34 @@ Firebase.createUser = function(credentials, onComplete) {
 
 /**
  * @static
+ * @param {string} pathPart
+ * @return {string}
+ */
+Firebase.escapePathPart = function(pathPart) {
+    return new StringBuilder(pathPart)
+        .replaceAll('.', '(P)')
+        .replaceAll('@', '(A)')
+        .replaceAll('!', '(B)')
+        .replaceAll('#', '(H)')
+        .replaceAll('$', '(D)')
+        .replaceAll('%', '(PR)')
+        .replaceAll('&', '(AN)')
+        .replaceAll('\'', '(SQ)')
+        .replaceAll('*', '(ST)')
+        .replaceAll('+', '(PL)')
+        .replaceAll('/', '(FS)')
+        .replaceAll('=', '(E)')
+        .replaceAll('?', '(Q)')
+        .replaceAll('^', '(C)')
+        .replaceAll('`', '(G)') //grave accent
+        .replaceAll('{', '(OC)')
+        .replaceAll('|', '(PI)')
+        .replaceAll('}', '(CC)')
+        .build();
+};
+
+/**
+ * @static
  * @param {*} ref
  * @return {Firebase}
  */
@@ -282,6 +311,34 @@ Firebase.timestamp = function() {
 Firebase.unauth = function() {
     return (new Firebase([]))
         .unauth();
+};
+
+/**
+ * @static
+ * @param {string} pathPart
+ * @return {string}
+ */
+Firebase.unescapePathPart = function(pathPart) {
+    return new StringBuilder(pathPart)
+        .replaceAll('(P)', '.')
+        .replaceAll('(A)', '@')
+        .replaceAll('(B)', '!')
+        .replaceAll('(H)', '#')
+        .replaceAll('(D)', '$')
+        .replaceAll('(PR)', '%')
+        .replaceAll('(AN)', '&')
+        .replaceAll('(SQ)', '\'')
+        .replaceAll('(ST)', '*')
+        .replaceAll('(PL)', '+')
+        .replaceAll('(FS)' ,'/')
+        .replaceAll('(E)', '=')
+        .replaceAll('(Q)', '?')
+        .replaceAll('(C)', '^')
+        .replaceAll('(G)', '`') //grave accent
+        .replaceAll('(OC)', '{')
+        .replaceAll('(PI)', '|')
+        .replaceAll('(CC)', '}')
+        .build();
 };
 
 

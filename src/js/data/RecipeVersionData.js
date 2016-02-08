@@ -33,7 +33,14 @@ const RecipeVersionData = Class.extend(Obj, {
      *  published: boolean,
      *  recipeUrl: string,
      *  updatedAt: number,
-     *  versionNumber: string
+     *  versionNumber: string,
+     *  versionParts: {
+     *      major: number,
+     *      minor: number,
+     *      patch: number,
+     *      preRelease: string,
+     *      metadata: string
+     * }
      * }} data
      */
     _constructor(data) {
@@ -74,6 +81,18 @@ const RecipeVersionData = Class.extend(Obj, {
          * @type {string}
          */
         this.versionNumber          = data.versionNumber;
+
+        /**
+         * @private
+         * @type {{
+         *      major: number,
+         *      minor: number,
+         *      patch: number,
+         *      preRelease: string,
+         *      metadata: string
+         * }}
+         */
+        this.versionParts           = data.versionParts;
     },
 
 
@@ -116,6 +135,19 @@ const RecipeVersionData = Class.extend(Obj, {
         return this.versionNumber;
     },
 
+    /**
+     * @return {{
+     *      major: number,
+     *      minor: number,
+     *      patch: number,
+     *      preRelease: string,
+     *      metadata: string
+     * }}
+     */
+    getVersionParts() {
+        return this.versionParts;
+    },
+
 
     //-------------------------------------------------------------------------------
     // IObjectable Implementation
@@ -130,7 +162,8 @@ const RecipeVersionData = Class.extend(Obj, {
             published: this.published,
             recipeUrl: this.recipeUrl,
             updatedAt: this.updatedAt,
-            versionNumber: this.versionNumber
+            versionNumber: this.versionNumber,
+            versionParts: this.versionParts
         };
     }
 });

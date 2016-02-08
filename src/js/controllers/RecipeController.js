@@ -23,6 +23,7 @@ import RecipeFile from '../core/RecipeFile';
 import RecipePackage from '../core/RecipePackage';
 import RecipeVersion from '../entities/RecipeVersion';
 import RecipeVersionData from '../data/RecipeVersionData';
+import VersionNumber from '../fields/VersionNumber';
 
 
 //-------------------------------------------------------------------------------
@@ -275,6 +276,7 @@ const RecipeController = Class.extend(Obj, {
             serverUrl: ConfigController.getConfigProperty('serverUrl')
         }).then((config) => {
             return Promises.promise((resolve, reject) => {
+                console.log('uploading to ', config.serverUrl + '/api/v1/publish');
                 const req = request.post(config.serverUrl + '/api/v1/publish', {
                     auth: {
                         bearer: publishKeyData.getKey()
@@ -311,12 +313,7 @@ const RecipeController = Class.extend(Obj, {
      * @param {string} recipeVersion
      */
     validateRecipeVersion(recipeVersion) {
-        if (!TypeUtil.isString(recipeVersion)) {
-            throw Throwables.exception('RecipeInvalid', {}, 'Recipe version must be a string');
-        }
-        if (!(/^[0-9]\.[0-9]\.[0-9]$/).test(recipeVersion)) {
-            throw Throwables.exception('RecipeInvalid', {}, 'Recipe version must of of the format [number].[number].[number]');
-        }
+        VersionNumber.validateVersionNumber(recipeVersion);
     },
 
     /**

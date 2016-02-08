@@ -1,8 +1,6 @@
 //TODO BRN: Figure out how to get rid of this type of file using bugpack
 
 export { default as Email } from './Email';
-export { default as IndexUserIdToEmailIds } from './IndexUserIdToEmailIds';
-export { default as IndexUsernameToUserId } from './IndexUsernameToUserId';
 export { default as PublishKey } from './PublishKey';
 export { default as Recipe } from './Recipe';
 export { default as RecipeCollaborator } from './RecipeCollaborator';

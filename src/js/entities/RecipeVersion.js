@@ -8,6 +8,8 @@ import {
     StringUtil
 } from 'bugcore';
 import Entity from './Entity';
+import Firebase from '../util/Firebase';
+import VersionNumber from '../fields/VersionNumber';
 
 
 //-------------------------------------------------------------------------------
@@ -50,11 +52,21 @@ RecipeVersion.create = function(recipeName, data) {
 /**
  * @static
  * @param {string} recipeName
+ * @param {string} versionQuery
+ * @return {Fireproof<Array.<{}>>}
+ */
+RecipeVersion.find = function(recipeName, versionQuery) {
+
+};
+
+/**
+ * @static
+ * @param {string} recipeName
  * @param {string} versionNumber
  * @return {Fireproof}
  */
 RecipeVersion.get = function(recipeName, versionNumber) {
-    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', Firebase.escapePathPart(versionNumber)]))
         .proof();
 };
 
@@ -65,7 +77,7 @@ RecipeVersion.get = function(recipeName, versionNumber) {
  * @returns {Promise}
  */
 RecipeVersion.remove = function(recipeName, versionNumber) {
-    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', Firebase.escapePathPart(versionNumber)]))
         .proof()
         .remove();
 };
@@ -80,7 +92,8 @@ RecipeVersion.remove = function(recipeName, versionNumber) {
  * @returns {Promise}
  */
 RecipeVersion.set = function(recipeName, data) {
-    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(data.versionNumber, '.', '-')]))
+    data.versionParts = VersionNumber.parseParts(data.versionNumber);
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', Firebase.escapePathPart(data.versionNumber)]))
         .proof()
         .set(data);
 };
@@ -96,7 +109,7 @@ RecipeVersion.set = function(recipeName, data) {
  * @return {Promise}
  */
 RecipeVersion.update = function(recipeName, versionNumber, updates) {
-    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', StringUtil.replaceAll(versionNumber, '.', '-')]))
+    return (new RecipeVersion(['recipes', 'gulp', 'public', recipeName, 'versions', Firebase.escapePathPart(versionNumber)]))
         .proof()
         .update(updates);
 };

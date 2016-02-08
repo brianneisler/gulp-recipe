@@ -54,7 +54,7 @@ PublishKey.create = function(data) {
  * @return {Fireproof}
  */
 PublishKey.get = function(key) {
-    return (new PublishKey(['publishKey', key]))
+    return (new PublishKey(['publishKeys', key]))
         .proof();
 };
 
@@ -71,7 +71,7 @@ PublishKey.get = function(key) {
  * @returns {Promise}
  */
 PublishKey.set = function(data) {
-    return (new PublishKey(['publishKey', data.key]))
+    return (new PublishKey(['publishKeys', data.key]))
         .proof()
         .set(data);
 };
@@ -85,7 +85,7 @@ PublishKey.set = function(data) {
  * @return {Promise}
  */
 PublishKey.update = function(key, updates) {
-    return (new PublishKey(['publishKey', key]))
+    return (new PublishKey(['publishKeys', key]))
         .proof()
         .update(updates);
 };

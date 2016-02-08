@@ -14,10 +14,11 @@ import AuthData from '../data/AuthData';
 import ConfigController from './ConfigController';
 import ContextController from './ContextController';
 import CurrentUser from '../data/CurrentUser';
+import Email from '../fields/Email';
 import Firebase from '../util/Firebase';
 import User from '../entities/User';
 import UserData from '../data/UserData';
-import Username from '../entities/fields/Username';
+import Username from '../fields/Username';
 
 
 //-------------------------------------------------------------------------------
@@ -133,9 +134,13 @@ const AuthController = Class.extend(Obj, {
         // TODO BRN: Validate username, email, password
         email       = email.toLowerCase();
         username    = username.toLowerCase();
-        return Firebase.createUser({
-            email: email,
-            password: password
+        return Email.validateEmail({
+            id: null
+        }, email).then(() => {
+            return Firebase.createUser({
+                email: email,
+                password: password
+            });
         }).then((firebaseUser) => {
             return this.authWithPassword(email, password)
                 .then((authData) => {
@@ -144,6 +149,7 @@ const AuthController = Class.extend(Obj, {
         }).then((results) => {
             const [firebaseUser, authData] = results;
             const user = {
+                email: '',
                 id: firebaseUser.uid,
                 signedUp: false,
                 username: ''
@@ -154,29 +160,30 @@ const AuthController = Class.extend(Obj, {
                 });
         }).then((results) => {
             const [user, authData] = results;
-            return this.completeSignupWithUsername(user, username)
+            return this.completeSignupWithUsernameAndEmail(user, username, email)
                 .then(() => {
                     return this.buildCurrentUserWithAuthData(authData);
                 });
         }).then((currentUser) => {
             return this.setCurrentUser(currentUser);
         });
-
-        // TODO BRN: Save email address
     },
 
     /**
      * @param {{}} user
      * @param {string} username
+     * @param {string} email
      * @return {Promise}
      */
-    completeSignupWithUsername(user, username) {
-        return Username.changeUsersUsername(user, username)
-            .then(() => {
-                return User.update(user.id, {
-                    signedUp: true
-                });
+    completeSignupWithUsernameAndEmail(user, username, email) {
+        return Promises.all([
+            Email.changeUsersEmail(user, email),
+            Username.changeUsersUsername(user, username)
+        ]).then(() => {
+            return User.update(user.id, {
+                signedUp: true
             });
+        });
     },
 
 

@@ -16,8 +16,8 @@ import Firebase from '../util/Firebase';
  * @class
  * @extends {Firebase}
  */
-const IndexUserIdToEmailIds = Class.extend(Firebase, {
-    _name: 'recipe.IndexUserIdToEmailIds'
+const UserIdToEmailIds = Class.extend(Firebase, {
+    _name: 'recipe.UserIdToEmailIds'
 });
 
 
@@ -30,8 +30,8 @@ const IndexUserIdToEmailIds = Class.extend(Firebase, {
  * @param {string} userId
  * @return {Fireproof}
  */
-IndexUserIdToEmailIds.getEmailIdsForUserId = function(userId) {
-    return (new IndexUserIdToEmailIds(['indexUserIdToEmailIds', userId]))
+UserIdToEmailIds.getEmailIdsForUserId = function(userId) {
+    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId]))
         .proof();
 };
 
@@ -41,8 +41,8 @@ IndexUserIdToEmailIds.getEmailIdsForUserId = function(userId) {
  * @param {string} emailId
  * @return {Promise}
  */
-IndexUserIdToEmailIds.removeEmailIdForUserId = function(userId, emailId) {
-    return (new IndexUserIdToEmailIds(['indexUserIdToEmailIds', userId, emailId]))
+UserIdToEmailIds.removeEmailIdForUserId = function(userId, emailId) {
+    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId, emailId]))
         .proof()
         .remove();
 };
@@ -53,8 +53,8 @@ IndexUserIdToEmailIds.removeEmailIdForUserId = function(userId, emailId) {
  * @param {string} emailId
  * @returns {Promise}
  */
-IndexUserIdToEmailIds.setEmailIdForUserId = function(userId, emailId) {
-    return (new IndexUserIdToEmailIds(['indexUserIdToEmailIds', userId, emailId]))
+UserIdToEmailIds.setEmailIdForUserId = function(userId, emailId) {
+    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId, emailId]))
         .proof()
         .set(emailId);
 };
@@ -64,4 +64,4 @@ IndexUserIdToEmailIds.setEmailIdForUserId = function(userId, emailId) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default IndexUserIdToEmailIds;
+export default UserIdToEmailIds;
