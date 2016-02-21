@@ -1,2 +1,2 @@
-export { default as UserIdToEmailIds } from './UserIdToEmailIds';
-export { default as UsernameToUserId } from './UsernameToUserId';
+export { default as EmailToUserIdIndex } from './EmailToUserIdIndex';
+export { default as UsernameToUserIdIndex } from './UsernameToUserIdIndex';

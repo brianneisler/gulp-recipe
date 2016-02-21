@@ -1,6 +1,0 @@
-{
-    "debug": false,
-    "firebaseUrl": "https://gulp-recipe.firebaseio.com",
-    "prefix": "/usr/local",
-    "serverUrl": "https://gulprecipe.com"
-}

@@ -1,0 +1,11 @@
+#development
+docs
+examples
+src
+test
+.editorconfig
+.eslintrc.json
+.reciperc
+.travis.yml
+gulpfile.js
+!resources/.reciperc

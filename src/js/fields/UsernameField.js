@@ -9,9 +9,8 @@ import {
     Throwables,
     TypeUtil
 } from 'bugcore';
-import Firebase from '../util/Firebase';
-import UsernameToUserId from '../indexes/UsernameToUserId';
-import User from '../entities/User';
+import { UsernameToUserIdIndex } from '../indexes';
+import { Firebase } from '../util';
 
 
 //-------------------------------------------------------------------------------
@@ -22,8 +21,8 @@ import User from '../entities/User';
  * @class
  * @extends {Obj}
  */
-const Username = Class.extend(Obj, {
-    _name: 'recipe.Username'
+const UsernameField = Class.extend(Obj, {
+    _name: 'recipe.UsernameField'
 });
 
 
@@ -35,7 +34,7 @@ const Username = Class.extend(Obj, {
  * @static
  * @const {RegExp}
  */
-Username.USERNAME_REGEX = /^[a-z]+(?:[a-z0-9-][a-z0-9]+)*$/;
+UsernameField.USERNAME_REGEX = /^[a-z]+(?:[a-z0-9-][a-z0-9]+)*$/;
 
 
 //-------------------------------------------------------------------------------
@@ -44,20 +43,20 @@ Username.USERNAME_REGEX = /^[a-z]+(?:[a-z0-9-][a-z0-9]+)*$/;
 
 /**
  * @static
- * @param {{}} user
+ * @param {UserEntity} userEntity
  * @param {string} inputUsername
  * @return {Promise}
  */
-Username.changeUsersUsername = function(user, inputUsername) {
+UsernameField.changeUsersUsername = function(userEntity, inputUsername) {
     const username = TypeUtil.isString(inputUsername) ? inputUsername.toLowerCase() : inputUsername;
-    return this.validateUsername(user, username)
+    return UsernameField.validateUsername(userEntity, username)
         .then(() => {
             const updates = {
-                ['users/' + user.id + '/username']: inputUsername,
-                ['indexes/usernameToUserId/' + inputUsername]: user.id
+                ['users/' + userEntity.getId() + '/username']: username,
+                ['indexes/usernameToUserId/' + username]: userEntity.getId()
             };
-            if (user.username) {
-                updates['indexes/usernameToUserId/' + user.username] = null;
+            if (userEntity.getUsername()) {
+                updates['indexes/usernameToUserId/' + userEntity.getUsername()] = null;
             }
             return Firebase
                 .proof([])
@@ -67,26 +66,25 @@ Username.changeUsersUsername = function(user, inputUsername) {
 
 /**
  * @static
- * @param {{}} user
+ * @param {UserEntity} userEntity
  * @param {string} username
  * @returns {Promise}
  */
-Username.validateUsername = function(user, username) {
+UsernameField.validateUsername = function(userEntity, username) {
     return Promises.try(() => {
-        if (!TypeUtil.isString(username) || !username.match(Username.USERNAME_REGEX)) {
+        if (!TypeUtil.isString(username) || !username.match(UsernameField.USERNAME_REGEX)) {
             throw Throwables.exception('BadUsername');
         }
-        return UsernameToUserId.getUserIdForUsername(username);
+        return UsernameToUserIdIndex.getUserIdForUsername(username);
     }).then((snapshot) => {
         if (!snapshot.exists()) {
             return true;
+        }
+        const userId = snapshot.val();
+        if (userId !== userEntity.getId()) {
+            throw Throwables.exception('UsernameInUse');
         } else {
-            const userId = snapshot.val();
-            if (userId !== user.id) {
-                throw Throwables.exception('UsernameInUse');
-            } else {
-                throw Throwables.exception('UsernameUnchanged');
-            }
+            throw Throwables.exception('UsernameUnchanged');
         }
     });
 };
@@ -96,4 +94,4 @@ Username.validateUsername = function(user, username) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default Username;
+export default UsernameField;

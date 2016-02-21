@@ -74,6 +74,39 @@ const CurrentUser = Class.extend(Obj, {
     },
 
 
+      //-------------------------------------------------------------------------------
+    // Obj Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @override
+     * @param {*} value
+     * @return {boolean}
+     */
+    equals(value) {
+        if (Class.doesExtend(value, CurrentUser)) {
+            return (
+                Obj.equals(value.getAuthData(), this.authData) &&
+                Obj.equals(value.getUserData(), this.userData)
+            );
+        }
+        return false;
+    },
+
+    /**
+     * @override
+     * @return {number}
+     */
+    hashCode() {
+        if (!this._hashCode) {
+            this._hashCode = Obj.hashCode('[CurrentUser]' +
+                Obj.hashCode(this.authData) + '_' +
+                Obj.hashCode(this.userData));
+        }
+        return this._hashCode;
+    },
+
+
     //-------------------------------------------------------------------------------
     // IObjectable Implementation
     //-------------------------------------------------------------------------------

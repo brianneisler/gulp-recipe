@@ -139,16 +139,16 @@ RecipePackage.DEFAULT_IGNORES = [
     '.DS_Store',
     '.git',
     '.hg',
-    '.npmrc',
-    '.reciperc',
     '.lock-wscript',
+    '.npmrc',
+    '.recipe',
+    '.reciperc',
     '.svn',
     '.wafpickle-*',
     'config.gypi',
     'CVS',
-    'npm-debug.log',
     'node_modules',
-    'recipes'
+    'npm-debug.log'
 ];
 
 /**

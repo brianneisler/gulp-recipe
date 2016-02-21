@@ -8,7 +8,7 @@ import {
     Proxy,
     Throwables
 } from 'bugcore';
-import RecipeContext from '../context/RecipeContext';
+import { RecipeContext } from '../context';
 
 
 //-------------------------------------------------------------------------------

@@ -44,13 +44,13 @@ const AuthData = Class.extend(Obj, {
          * @private
          * @type {string}
          */
-        this.token = data.token;
+        this.token  = data.token;
 
         /**
          * @private
          * @type {string}
          */
-        this.uid = data.uid;
+        this.uid    = data.uid;
     },
 
 
@@ -70,6 +70,39 @@ const AuthData = Class.extend(Obj, {
      */
     getUid() {
         return this.uid;
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Obj Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @override
+     * @param {*} value
+     * @return {boolean}
+     */
+    equals(value) {
+        if (Class.doesExtend(value, AuthData)) {
+            return (
+                Obj.equals(value.getToken(), this.token) &&
+                Obj.equals(value.getUid(), this.uid)
+            );
+        }
+        return false;
+    },
+
+    /**
+     * @override
+     * @return {number}
+     */
+    hashCode() {
+        if (!this._hashCode) {
+            this._hashCode = Obj.hashCode('[AuthData]' +
+                Obj.hashCode(this.token) + '_' +
+                Obj.hashCode(this.uid));
+        }
+        return this._hashCode;
     },
 
 

@@ -4,8 +4,9 @@
 
 import {
     Class,
-    Map,
-    Obj
+    IObjectable,
+    Obj,
+    Throwables
 } from 'bugcore';
 
 
@@ -17,9 +18,9 @@ import {
  * @class
  * @extends {Obj}
  */
-const RecipeStoreCache = Class.extend(Obj, {
+const Data = Class.extend(Obj, {
 
-    _name: 'recipe.RecipeStoreCache',
+    _name: 'recipe.Data',
 
 
     //-------------------------------------------------------------------------------
@@ -28,21 +29,22 @@ const RecipeStoreCache = Class.extend(Obj, {
 
     /**
      * @constructs
+     * @param {Object} rawData
      */
-    _constructor() {
+    _constructor(rawData) {
 
         this._super();
 
 
         //-------------------------------------------------------------------------------
-        // Private Properties
+        // Public Properties
         //-------------------------------------------------------------------------------
 
         /**
          * @private
-         * @type {Map.<string, Recipe>}
+         * @type {Object}
          */
-        this.recipeNameToRecipeMap  = new Map();
+        this.rawData = rawData;
     },
 
 
@@ -51,45 +53,48 @@ const RecipeStoreCache = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Map.<string, Recipe>}
+     * @return {Object}
      */
-    getRecipeNameToRecipeMap() {
-        return this.recipeNameToRecipeMap;
+    getRawData() {
+        return this.rawData;
     },
 
 
     //-------------------------------------------------------------------------------
-    // Public Methods
+    // Abstract Methods
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string} recipeName
-     * @returns {Recipe}
+     * @abstract
+     * @return {string}
      */
-    getRecipe(recipeName) {
-        return this.recipeNameToRecipeMap.get(recipeName);
+    toCacheKey() {
+        throw Throwables.bug('AbstractMethodNotImplemented', {}, 'Must implement Data.toCacheKey');
     },
 
-    /**
-     * @param {string} recipeName
-     * @returns {boolean}
-     */
-    hasRecipe(recipeName) {
-        return this.recipeNameToRecipeMap.containsKey(recipeName);
-    },
+
+    //-------------------------------------------------------------------------------
+    // IObjectable Implementation
+    //-------------------------------------------------------------------------------
 
     /**
-     * @param {string} recipeName
-     * @param {Recipe} recipe
+     * @return {Object}
      */
-    setRecipe(recipeName, recipe) {
-        this.recipeNameToRecipeMap.put(recipeName, recipe);
+    toObject() {
+        return this.rawData;
     }
 });
+
+
+//-------------------------------------------------------------------------------
+// Interfaces
+//-------------------------------------------------------------------------------
+
+Class.implement(Data, IObjectable);
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-export default RecipeStoreCache;
+export default Data;

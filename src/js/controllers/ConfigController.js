@@ -12,9 +12,13 @@ import {
     Throwables
 } from 'bugcore';
 import path from 'path';
-import ContextController from './ContextController';
-import RecipeConfig from '../config/RecipeConfig';
-import RecipeConfigChain from '../config/RecipeConfigChain';
+import {
+    ContextController
+} from './';
+import {
+    RecipeConfig,
+    RecipeConfigChain
+} from '../config';
 
 
 //-------------------------------------------------------------------------------
@@ -98,7 +102,7 @@ const ConfigController = Class.extend(Obj, {
     },
 
     /**
-     * @return {Promise}
+     * @return {Promise<RecipeConfigChain>}
      */
     loadConfigChain() {
         const context = ContextController.getCurrentContext();
@@ -184,6 +188,13 @@ const ConfigController = Class.extend(Obj, {
         return this.configOverride.setProperty(key, value);
     },
 
+    /**
+     * @param {Object} propertiesObject
+     */
+    updateConfigOverrides(propertiesObject) {
+        return this.configOverride.updateProperties(propertiesObject);
+    },
+
 
     //-------------------------------------------------------------------------------
     // Private Methods
@@ -208,15 +219,16 @@ const ConfigController = Class.extend(Obj, {
         const execPath      = context.getExecPath();
         const modulePath    = context.getModulePath();
         const userPath      = context.getUserPath();
+
         return Promises.props({
-            builtIn: RecipeConfig.loadFromFile(modulePath + path.sep + 'config' + path.sep + ConfigController.CONFIG_FILE_NAME),
+            builtIn: RecipeConfig.loadFromFile(path.resolve(modulePath, 'resources', ConfigController.CONFIG_FILE_NAME), ConfigController.BUILT_IN_DEFAULTS),
             global: '',
-            project: this.belowTarget(context, 'project') ? null : RecipeConfig.loadFromFile(execPath + path.sep + ConfigController.CONFIG_FILE_NAME),
-            user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(userPath + path.sep + ConfigController.CONFIG_FILE_NAME),
+            project: this.belowTarget(context, 'project') ? null : RecipeConfig.loadFromFile(path.resolve(execPath, ConfigController.CONFIG_FILE_NAME)),
+            user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(path.resolve(userPath, ConfigController.CONFIG_FILE_NAME)),
             override: this.configOverride
         }).then((configs) => {
             const chain = new RecipeConfigChain(configs, context.getTarget());
-            configs.global = this.belowTarget(context, 'global ') ? null : RecipeConfig.loadFromFile(chain.getProperty('prefix') + path.sep + ConfigController.CONFIG_FILE_NAME);
+            configs.global = this.belowTarget(context, 'global') ? null : RecipeConfig.loadFromFile(path.resolve(chain.getProperty('prefix'), ConfigController.CONFIG_FILE_NAME));
             return Promises.props(configs);
         }).then((configs) => {
             return new RecipeConfigChain(configs, context.getTarget());
@@ -228,6 +240,17 @@ const ConfigController = Class.extend(Obj, {
 //-------------------------------------------------------------------------------
 // Static Properties
 //-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @type {{debug: boolean, firebaseUrl: string, prefix: string, serverUrl: string}}
+ */
+ConfigController.BUILT_IN_DEFAULTS  = {
+    debug: false,
+    firebaseUrl: 'https://gulp-recipe.firebaseio.com',
+    prefix: '/usr/local',
+    serverUrl: 'https://gulprecipe.com'
+};
 
 /**
  * @static
@@ -286,7 +309,8 @@ Proxy.proxy(ConfigController, Proxy.method(ConfigController.getInstance), [
     'getConfigProperty',
     'setConfigProperty',
     'getConfigOverride',
-    'setConfigOverride'
+    'setConfigOverride',
+    'updateConfigOverrides'
 ]);
 
 

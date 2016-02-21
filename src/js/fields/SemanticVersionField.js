@@ -5,10 +5,12 @@
 import {
     Class,
     Obj,
+    ObjectUtil,
     Throwables,
     TypeUtil
 } from 'bugcore';
-import RegexUtil from '../util/RegexUtil';
+import semver from 'semver';
+import { RegexUtil } from '../util';
 
 
 //-------------------------------------------------------------------------------
@@ -19,8 +21,8 @@ import RegexUtil from '../util/RegexUtil';
  * @class
  * @extends {Obj}
  */
-const VersionNumber = Class.extend(Obj, {
-    _name: 'recipe.VersionNumber'
+const SemanticVersionField = Class.extend(Obj, {
+    _name: 'recipe.SemanticVersionField'
 });
 
 
@@ -32,7 +34,7 @@ const VersionNumber = Class.extend(Obj, {
  * @static
  * @const {RegExp}
  */
-VersionNumber.VERSION_NUMBER_REGEX = new RegExp('^' +
+SemanticVersionField.VERSION_NUMBER_REGEX = new RegExp('^' +
     '(' + RegexUtil.NO_LEADING_ZERO + ')' +
     '\\.(' + RegexUtil.NO_LEADING_ZERO + ')' +
     '\\.(' + RegexUtil.NO_LEADING_ZERO + ')' +
@@ -47,35 +49,30 @@ VersionNumber.VERSION_NUMBER_REGEX = new RegExp('^' +
 
 /**
  * @static
- * @param {string} versionNumber
+ * @param {string} version
  * @return {{
+ *      build: Array.<string>
  *      major: number,
  *      minor: number,
  *      patch: number,
- *      preRelease: string,
- *      metadata: string
+ *      prerelease: Array.<string>,
+ *      raw: string,
+ *      version: string
  * }}
  */
-VersionNumber.parseParts = function(versionNumber) {
-    const parts = versionNumber.match(VersionNumber.VERSION_NUMBER_REGEX);
-    return {
-        major: parts[1],
-        minor: parts[2],
-        patch: parts[3],
-        preRelease: parts[4] || '',
-        metadata: parts[5] || ''
-    };
+SemanticVersionField.parse = function(version) {
+    return ObjectUtil.pick(semver.parse(version), ['build', 'major', 'minor', 'patch', 'prerelease', 'raw', 'version']);
 };
 
 /**
  * @static
- * @param {string} versionNumber
+ * @param {string} version
  */
-VersionNumber.validateVersionNumber = function(versionNumber) {
-    if (!TypeUtil.isString(versionNumber)) {
+SemanticVersionField.validate = function(version) {
+    if (!TypeUtil.isString(version)) {
         throw Throwables.exception('RecipeInvalid', {}, 'Recipe version must be a string');
     }
-    if (!(VersionNumber.VERSION_NUMBER_REGEX).test(versionNumber)) {
+    if (!(SemanticVersionField.VERSION_NUMBER_REGEX).test(version)) {
         throw Throwables.exception('RecipeInvalid', {}, 'Recipe version must of of the format [number].[number].[number]');
     }
 };
@@ -85,4 +82,4 @@ VersionNumber.validateVersionNumber = function(versionNumber) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default VersionNumber;
+export default SemanticVersionField;

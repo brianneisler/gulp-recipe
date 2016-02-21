@@ -6,13 +6,12 @@ import {
     Class,
     Obj,
     Promises,
-    StringBuilder,
     Throwables,
     TypeUtil
 } from 'bugcore';
 import EmailValidator from 'email-validator';
-import Firebase from '../util/Firebase';
-import EmailToUserId from '../indexes/EmailToUserId';
+import { EmailToUserIdIndex } from '../indexes';
+import { Firebase } from '../util';
 
 
 //-------------------------------------------------------------------------------
@@ -23,8 +22,8 @@ import EmailToUserId from '../indexes/EmailToUserId';
  * @class
  * @extends {Obj}
  */
-const Email = Class.extend(Obj, {
-    _name: 'recipe.Email'
+const EmailField = Class.extend(Obj, {
+    _name: 'recipe.EmailField'
 });
 
 
@@ -34,20 +33,20 @@ const Email = Class.extend(Obj, {
 
 /**
  * @static
- * @param {{}} user
+ * @param {UserEntity} userEntity
  * @param {string} inputEmail
  * @return {Promise}
  */
-Email.changeUsersEmail = function(user, inputEmail) {
+EmailField.changeUsersEmail = function(userEntity, inputEmail) {
     const email = TypeUtil.isString(inputEmail) ? inputEmail.toLowerCase() : inputEmail;
-    return this.validateEmail(user, email)
+    return this.validateEmail(userEntity, email)
         .then(() => {
             const updates = {
-                ['users/' + user.id + '/email']: inputEmail,
-                ['indexes/emailToUserId/' + Firebase.escapePathPart(inputEmail)]: user.id
+                ['users/' + userEntity.getId() + '/email']: inputEmail,
+                ['indexes/emailToUserId/' + Firebase.escapePathPart(inputEmail)]: userEntity.getId()
             };
-            if (user.email) {
-                updates['indexes/emailToUserId/' + Firebase.escapePathPart(user.email)] = null;
+            if (userEntity.getEmail()) {
+                updates['indexes/emailToUserId/' + Firebase.escapePathPart(userEntity.getEmail())] = null;
             }
             return Firebase
                 .proof([])
@@ -57,27 +56,25 @@ Email.changeUsersEmail = function(user, inputEmail) {
 
 /**
  * @static
- * @param {{}} user
+ * @param {UserEntity} userEntity
  * @param {string} email
  * @returns {Promise}
  */
-Email.validateEmail = function(user, email) {
+EmailField.validateEmail = function(userEntity, email) {
     return Promises.try(() => {
         if (!TypeUtil.isString(email) || !EmailValidator.validate(email)) {
             throw Throwables.exception('BadEmail');
         }
-        return EmailToUserId.getUserIdForEmail(email);
+        return EmailToUserIdIndex.getUserIdForEmail(email);
     }).then((snapshot) => {
         if (!snapshot.exists()) {
             return true;
-        } else {
-            const userId = snapshot.val();
-            if (userId !== user.id) {
-                throw Throwables.exception('EmailInUse');
-            } else {
-                throw Throwables.exception('EmailUnchanged');
-            }
         }
+        const userId = snapshot.val();
+        if (userId !== userEntity.getId()) {
+            throw Throwables.exception('EmailInUse');
+        }
+        throw Throwables.exception('EmailUnchanged');
     });
 };
 
@@ -86,4 +83,4 @@ Email.validateEmail = function(user, email) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default Email;
+export default EmailField;

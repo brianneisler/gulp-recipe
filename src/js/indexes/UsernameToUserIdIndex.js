@@ -5,7 +5,7 @@
 import {
     Class
 } from 'bugcore';
-import Firebase from '../util/Firebase';
+import { Firebase } from '../util';
 
 
 //-------------------------------------------------------------------------------
@@ -16,8 +16,8 @@ import Firebase from '../util/Firebase';
  * @class
  * @extends {Firebase}
  */
-const UserIdToEmailIds = Class.extend(Firebase, {
-    _name: 'recipe.UserIdToEmailIds'
+const UsernameToUserIdIndex = Class.extend(Firebase, {
+    _name: 'recipe.UsernameToUserIdIndex'
 });
 
 
@@ -27,36 +27,35 @@ const UserIdToEmailIds = Class.extend(Firebase, {
 
 /**
  * @static
- * @param {string} userId
+ * @param {string} username
  * @return {Fireproof}
  */
-UserIdToEmailIds.getEmailIdsForUserId = function(userId) {
-    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId]))
+UsernameToUserIdIndex.getUserIdForUsername = function(username) {
+    return (new UsernameToUserIdIndex(['indexes', 'usernameToUserId', username]))
         .proof();
 };
 
 /**
  * @static
- * @param {string} userId
- * @param {string} emailId
+ * @param {string} username
  * @return {Promise}
  */
-UserIdToEmailIds.removeEmailIdForUserId = function(userId, emailId) {
-    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId, emailId]))
+UsernameToUserIdIndex.removeUserIdForUsername = function(username) {
+    return (new UsernameToUserIdIndex(['indexes', 'usernameToUserId', username]))
         .proof()
         .remove();
 };
 
 /**
  * @static
+ * @param {string} username
  * @param {string} userId
- * @param {string} emailId
  * @returns {Promise}
  */
-UserIdToEmailIds.setEmailIdForUserId = function(userId, emailId) {
-    return (new UserIdToEmailIds(['indexes', 'userIdToEmailIds', userId, emailId]))
+UsernameToUserIdIndex.setUserIdForUsername = function(username, userId) {
+    return (new UsernameToUserIdIndex(['indexes', 'usernameToUserId', username]))
         .proof()
-        .set(emailId);
+        .set(userId);
 };
 
 
@@ -64,4 +63,4 @@ UserIdToEmailIds.setEmailIdForUserId = function(userId, emailId) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default UserIdToEmailIds;
+export default UsernameToUserIdIndex;

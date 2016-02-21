@@ -62,6 +62,37 @@ const UserData = Class.extend(Obj, {
 
 
     //-------------------------------------------------------------------------------
+    // Obj Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @override
+     * @param {*} value
+     * @return {boolean}
+     */
+    equals(value) {
+        if (Class.doesExtend(value, UserData)) {
+            return (
+                Obj.equals(value.getId(), this.id)
+            );
+        }
+        return false;
+    },
+
+    /**
+     * @override
+     * @return {number}
+     */
+    hashCode() {
+        if (!this._hashCode) {
+            this._hashCode = Obj.hashCode('[UserData]' +
+                Obj.hashCode(this.id));
+        }
+        return this._hashCode;
+    },
+
+
+    //-------------------------------------------------------------------------------
     // IObjectable Implementation
     //-------------------------------------------------------------------------------
 

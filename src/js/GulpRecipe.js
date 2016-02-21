@@ -3,23 +3,20 @@
 //-------------------------------------------------------------------------------
 
 import {
+    ArgUtil,
     Class,
-    Map,
     Obj,
     ObjectBuilder,
-    Promises,
     Proxy,
-    Set,
     Throwables,
     TypeUtil
 } from 'bugcore';
-import fs from 'fs';
-import npm from 'npm';
 import path from 'path';
 import * as controllers from './controllers';
 import * as core from './core';
 import * as data from './data';
 import * as entities from './entities';
+import * as managers from './managers';
 import * as util from './util';
 
 
@@ -49,107 +46,23 @@ const GulpRecipe = Class.extend(Obj, {
 
 
     //-------------------------------------------------------------------------------
-    // Constructor
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @constructs
-     */
-    _constructor() {
-
-        this._super();
-
-
-        //-------------------------------------------------------------------------------
-        // Public Properties
-        //-------------------------------------------------------------------------------
-
-        /**
-         * @private
-         * @type {RecipeStore}
-         */
-        this.currentRecipeStore     = null;
-
-        /**
-         * @private
-         * @type {Set.<string>}
-         */
-        this.dependencyCacheSet     = new Set();
-
-        /**
-         * @pivate
-         * @type {boolean}
-         */
-        this.npmLoaded              = false;
-
-        /**
-         * @private
-         * @type {Promise}
-         */
-        this.npmLoadingPromise      = null;
-
-        /**
-         * @private
-         * @type {Map.<string, RecipeStore>}
-         */
-        this.recipeStoreMap         = new Map();
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Init Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {GulpRecipe}
-     */
-    init() {
-        const _this = this._super();
-        if (_this) {
-            _this.configure({
-                recipesDir: path.resolve(process.cwd() + path.sep + 'gulp-recipes')
-            });
-        }
-        return _this;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Getters and Setters
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {RecipeStore}
-     */
-    getCurrentRecipeStore() {
-        return this.currentRecipeStore;
-    },
-
-    /**
-     * @return {Map.<string, RecipeStore>}
-     */
-    getRecipeStoreMap() {
-        return this.recipeStoreMap;
-    },
-
-
-    //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
     /**
      * @param {{
-     *      recipesDir: string
+     *      auth: {
+     *          uid: string,
+     *          token: string
+     *      },
+     *      prefix: string
      * }} configObject
      */
     configure(configObject) {
         if (TypeUtil.isObject(configObject)) {
-            if (TypeUtil.isString(configObject.recipesDir)) {
-                this.configureRecipesDir(configObject.recipesDir);
-            }
-        } else {
-            throw Throwables.illegalArgumentBug('configObject', configObject, 'must be an object');
+            return ConfigController.updateConfigOverrides(configObject);
         }
+        throw Throwables.illegalArgumentBug('configObject', configObject, 'must be an object');
     },
 
     /**
@@ -232,23 +145,37 @@ const GulpRecipe = Class.extend(Obj, {
     },
 
     /**
-     * @param {string} recipeIdentifier
-     * @return {function(function(Error), *...)}
+     * @param {string} recipeQuery
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise<Recipe>}
      */
-    get(recipeIdentifier) {
-        const recipeArgs  = Array.prototype.slice.call(arguments);
-        recipeArgs.shift();
-        return () => {
-            const gulpArgs = Array.prototype.slice.call(arguments);
-            const [ recipeName, recipeVersionQuery ] = this.parseRecipeIdentifier(recipeIdentifier);
-            return this.ensureRecipeInstalled(recipeName, recipeVersionQuery)
-                .then((installedRecipeData) => {
-                    return this.loadRecipe(installedRecipeData.recipeName, installedRecipeData.recipeVersion);
-                })
-                .then((recipe) => {
-                    return recipe.runRecipe(gulpArgs.concat(recipeArgs));
-                });
-        };
+    get(recipeQuery, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        return this.context(options)
+            .then(() => {
+                return RecipeController.getRecipe(recipeQuery);
+            });
+    },
+
+     /**
+     * @param {string} recipeQuery
+     * @param {{
+     *      target: string=
+     * }=} options
+     * @return {Promise}
+     */
+    install: function(recipeQuery, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        return this.context(options)
+            .then(() => {
+                return RecipeController.installRecipe(recipeQuery);
+            });
     },
 
     /**
@@ -283,6 +210,22 @@ const GulpRecipe = Class.extend(Obj, {
             .then(() => {
                 return AuthController.logout();
             });
+    },
+
+    /**
+     * @param {string} recipeQuery
+     * @return {function(function(Error), *...)}
+     */
+    make(recipeQuery) {
+        const recipeArgs    = ArgUtil.toArray(arguments);
+        recipeQuery         = recipeArgs.shift();
+        return () => {
+            const gulpArgs      = ArgUtil.toArray(arguments);
+            return this.get(recipeQuery)
+                .then((recipe) => {
+                    return recipe.runRecipe(gulpArgs.concat(recipeArgs));
+                });
+        };
     },
 
     /**
@@ -332,188 +275,6 @@ const GulpRecipe = Class.extend(Obj, {
 
     /**
      * @private
-     * @param {string} recipesDir
-     */
-    configureRecipesDir(recipesDir) {
-        const recipeStore = new core.RecipeStore(recipesDir);
-        this.recipeStoreMap.put(recipesDir, recipeStore);
-        this.currentRecipeStore = recipeStore;
-    },
-
-    /**
-     * @private
-     * @return {Promise}
-     */
-    ensureNpmLoaded() {
-        return Promises.promise((resolve) => {
-            if (!this.npmLoaded) {
-                resolve(this.loadNpm());
-            } else {
-                resolve();
-            }
-        });
-    },
-
-    /**
-     * @private
-     * @param {Recipe} gulpRecipe
-     * @return {Promise}
-     */
-    ensureRecipeDependenciesInstalled(gulpRecipe) {
-        return this.ensureNpmLoaded()
-            .then(() => {
-                const dependenciesToInstall = [];
-                gulpRecipe.getDependencies().forEach((dependency) => {
-                    if (!this.isDependencyInstalled(dependency)) {
-                        dependenciesToInstall.push(dependency);
-                    }
-                });
-                return this.installDependencies(dependenciesToInstall);
-            }).then(() => {
-                return gulpRecipe;
-            });
-    },
-
-    /**
-     * @private
-     * @param {string} recipeName
-     * @param {string} recipeVersionQuery
-     * @return {Promise}
-     */
-    ensureRecipeInstalled(recipeName, recipeVersionQuery) {
-        return entities.Recipe.get(recipeName)
-            .then((snapshot) => {
-                if (!snapshot.exists()) {
-                    throw new Throwables.exception('RecipeDoesNotExist', {}, 'A gulp-recipe by the name "' + recipeName + '" does not exist.');
-                }
-                if (recipeVersionQuery) {
-                    return this.resolveRecipeVersionQuery(recipeVersionQuery);
-                }
-                return snapshot.val().lastPublishedVersion;
-            })
-            .then((recipeVersionNumber) => {
-                return entities.RecipeVersion.get(recipeName, recipeVersionNumber)
-                    .then((snapshot) => {
-                        if (!snapshot.exists()) {
-                            throw new Throwables.exception('RecipeVersionDoesNotExist', {}, 'Cannot find version "' + recipeVersionNumber + '" for gulp-recipe "' + recipeName + '".');
-                        }
-                        return snapshot.val();
-                    });
-            });
-            /*.then((recipeVersion) => {
-                //TODO BRN: Check the download cache
-            });*/
-    },
-
-    /**
-     * @private
-     * @param {string} recipeName
-     * @return {Promise}
-     */
-    findAndDefineRecipe(recipeName) {
-        this.tryFindRecipeObject(recipeName)
-            .then((recipeObject) => {
-                if (!recipeObject) {
-                    throw Throwables.exception('CouldNotFindRecipe', {}, 'Could not find recipe by the name "' + recipeName + '"');
-                }
-                return this.define(recipeObject);
-            });
-    },
-
-    /**
-     * @private
-     * @param {Array.<string>} dependencies
-     * @returns {Promise}
-     */
-    installDependencies(dependencies) {
-        return Promises.promise((resolve, reject) => {
-            if (dependencies.length > 0) {
-                npm.commands.install(dependencies, (error) => {
-                    if (error) {
-                        return reject(error);
-                    }
-                    return resolve();
-                });
-            } else {
-                resolve();
-            }
-        });
-    },
-
-    /**
-     * @private
-     * @param {string} dependency
-     * @returns {boolean}
-     */
-    isDependencyInstalled(dependency) {
-        let result = false;
-        if (this.dependencyCacheSet.contains(dependency)) {
-            return true;
-        }
-        try {
-            result = !!require.resolve(dependency);
-            this.dependencyCacheSet.add(dependency);
-        } catch(error) {
-            console.log('could not find dependency "' + dependency + '"'); //eslint-disable-line  no-console
-        }
-        return result;
-    },
-
-    /**
-     * @return {Promise}
-     */
-    loadNpm() {
-        if (!this.npmLoadingPromise) {
-            this.npmLoadingPromise = Promises.promise((resolve, reject) => {
-                npm.on('log', (message) => {
-                    console.log(message); //eslint-disable-line  no-console
-                });
-                npm.load({
-                    loaded: false
-                }, (error) => {
-                    this.npmLoadingPromise = null;
-                    if (error) {
-                        this.npmLoaded = false;
-                        return reject(error);
-                    }
-                    this.npmLoaded = true;
-                    return resolve();
-                });
-            });
-        }
-        return this.npmLoadingPromise;
-    },
-
-    /**
-     * @private
-     * @param {string} recipeName
-     * @param {string} recipeVersion
-     * @returns {Promise}
-     */
-    loadRecipe(recipeName, recipeVersion) {
-        return Promises.try(() => {
-            let gulpRecipe = this.currentRecipeStore.getRecipe(recipeName, recipeVersion);
-            if (!gulpRecipe) {
-                gulpRecipe = this.findAndDefineRecipe(recipeName);
-            }
-            return this.ensureRecipeDependenciesInstalled(gulpRecipe);
-        });
-    },
-
-    /**
-     * @private
-     * @param {string} recipeIdentifier
-     * @return {[string, string]}
-     */
-    parseRecipeIdentifier(recipeIdentifier) {
-        if (recipeIdentifier.indexOf('@') > -1) {
-            return recipeIdentifier.split('@');
-        }
-        return [recipeIdentifier, ''];
-    },
-
-    /**
-     * @private
      * @param {{
      *      execPath: string=,
      *      target: string=
@@ -537,32 +298,6 @@ const GulpRecipe = Class.extend(Obj, {
         return ObjectBuilder
             .assign(defaults, suppliedDefaults, options)
             .build();
-    },
-
-    /**
-     * @private
-     * @param {string} recipeVersionQuery
-     * @returns {Promise}
-     */
-    resolveRecipeVersionQuery(recipeVersionQuery) {
-        //TODO BRN: resolve the query to the correct version for this query.
-        return Promises.resolve(recipeVersionQuery);
-    },
-
-    /**
-     * @private
-     * @param {string} recipeName
-     * @returns {{
-     *      dependencies: Array.<string>,
-     *      recipe: function(function(Error), *...)
-     * }}
-     */
-    tryFindRecipeObject(recipeName) {
-        let recipeObject = null;
-        try {
-            recipeObject = fs.readFile(this.recipesDir + path.sep + recipeName + path.sep + 'recipe.json');
-        } catch(error) {} //eslint-disable-line  no-empty
-        return recipeObject;
     }
 });
 
@@ -594,6 +329,12 @@ GulpRecipe.data         = data;
  * @type {*}
  */
 GulpRecipe.entities     = entities;
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.managers     = managers;
 
 /**
  * @static
@@ -641,9 +382,10 @@ Proxy.proxy(GulpRecipe, Proxy.method(GulpRecipe.getInstance), [
     'configSet',
     'context',
     'define',
-    'get',
+    'install',
     'login',
     'logout',
+    'make',
     'publish',
     'signUp'
 ]);
@@ -653,4 +395,4 @@ Proxy.proxy(GulpRecipe, Proxy.method(GulpRecipe.getInstance), [
 // Exports
 //-------------------------------------------------------------------------------
 
-module.exports = GulpRecipe;
+export default GulpRecipe;

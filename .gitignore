@@ -18,7 +18,7 @@ npm-debug.log
 # gulp recipes
 .recipe
 .reciperc
-!config/.reciperc
+!resources/.reciperc
 
 # IntelliJ resources
 *.iml

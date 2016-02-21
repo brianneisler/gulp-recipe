@@ -3,18 +3,18 @@
 var program = require('commander');
 
 program
-    .arguments('<recipe-query>')
     .description('manually install a recipe')
+    .arguments('<recipe-query>')
+    .option('-g, --global', 'use global config file')
+    .option('-p, --project', 'use project config file')
+    .option('-u, --user', 'use user config file')
     .action((recipeQuery, options) => {
         var InstallCommand = require('../dist/js/commands/InstallCommand').default;
-        InstallCommand.run(options)
+        InstallCommand.run(recipeQuery, options)
             .then((installedRecipe) => {
-                console.log('Recipe installed ' + installedRecipe.name + '@' + installedRecipe.version);
                 process.exit();
             })
             .catch((error) => {
-                console.log('Install failed.');
-                console.log(error);
                 process.exit(1);
             });
     })

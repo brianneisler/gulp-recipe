@@ -4,12 +4,15 @@
 
 import {
     Class,
+    DataUtil,
     Obj,
     StringBuilder,
+    StringUtil,
+    Throwables,
     TypeUtil
 } from 'bugcore';
 import firebase from 'Firebase';
-import ConfigController from '../controllers/ConfigController';
+import { ConfigController } from '../controllers';
 import Fireproof from './Fireproof';
 
 
@@ -32,9 +35,9 @@ const Firebase = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {*} value
+     * @param {*} ref
      */
-    _constructor(value) {
+    _constructor(ref) {
 
         this._super();
 
@@ -49,12 +52,10 @@ const Firebase = Class.extend(Obj, {
          */
         this._ref = null;
 
-        if (value instanceof firebase) {
-            this._ref = value;
-        } else if (TypeUtil.isArray(value)) {
-            this._ref = new firebase([ConfigController.getProperty('firebaseUrl')].concat(value).join('/'));
+        if (ref instanceof firebase) {
+            this._ref = ref;
         } else {
-            this._ref = new firebase(value);
+            this._ref = new firebase(Firebase.path(ref));
         }
     },
 
@@ -82,7 +83,7 @@ const Firebase = Class.extend(Obj, {
      * @param {{}} options
      */
     authWithCustomToken(authToken, onComplete, options) {
-        this._ref.authWithCustomToken(authToken, onComplete, options);
+        return this._ref.authWithCustomToken(authToken, onComplete, options);
     },
 
     /**
@@ -93,7 +94,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      */
     authWithPassword(credentials, onComplete) {
-        this._ref.authWithPassword(credentials, onComplete);
+        return this._ref.authWithPassword(credentials, onComplete);
     },
 
     /**
@@ -104,7 +105,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      */
     createUser(credentials, onComplete) {
-        this._ref.createUser(credentials, onComplete);
+        return this._ref.createUser(credentials, onComplete);
     },
 
     /**
@@ -115,13 +116,33 @@ const Firebase = Class.extend(Obj, {
     },
 
     /**
+     * @param {string=} eventType
+     * @param {function()=} callback
+     * @param {Object=} context
+     */
+    off(eventType, callback, context) {
+        return this._ref.off(eventType, callback, context);
+    },
+
+    /**
+     * @param {string} eventType
+     * @param {function()} callback
+     * @param {function()=} cancelCallback
+     * @param {Object=} context
+     * @return {function()}
+     */
+    on(eventType, callback, cancelCallback, context) {
+        return this._ref.on(eventType, callback, cancelCallback, context);
+    },
+
+    /**
      * @param eventType
      * @param successCallback
      * @param failureCallback
      * @param context
      */
     once(eventType, successCallback, failureCallback, context) {
-        this._ref.once(eventType, successCallback, failureCallback, context);
+        return this._ref.once(eventType, successCallback, failureCallback, context);
     },
 
     /**
@@ -156,7 +177,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      */
     remove(onComplete) {
-        this._ref.remove(onComplete);
+        return this._ref.remove(onComplete);
     },
 
     /**
@@ -165,7 +186,14 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      */
     set(value, onComplete) {
-        this._ref.set(value, onComplete);
+        return this._ref.set(value, onComplete);
+    },
+
+    /**
+     * @return {string}
+     */
+    toString() {
+        return this._ref.toString();
     },
 
     /**
@@ -175,7 +203,7 @@ const Firebase = Class.extend(Obj, {
      * @param {boolean=} applyLocally
      */
     transaction(updateFunction, onComplete, applyLocally) {
-        this._ref.transaction(updateFunction, onComplete, applyLocally);
+        return this._ref.transaction(updateFunction, onComplete, applyLocally);
     },
 
     /**
@@ -191,7 +219,7 @@ const Firebase = Class.extend(Obj, {
      * @param {function=} onComplete
      */
     update(value, onComplete) {
-        this._ref.update(value, onComplete);
+        return this._ref.update(value, onComplete);
     }
 });
 
@@ -277,6 +305,43 @@ Firebase.escapePathPart = function(pathPart) {
  */
 Firebase.fire = function(ref) {
     return new Firebase(ref);
+};
+
+/**
+ * @static
+ * @param {*} value
+ * @return {boolean}
+ */
+Firebase.isMultiUpdate = function(value) {
+    return (TypeUtil.isObject(value) && DataUtil.anyIn(value, (key) => StringUtil.contains(key, '/')));
+};
+
+/**
+ * @statix
+ * @param {string | Array.<string>} value
+ * @return {string}
+ */
+Firebase.path = function(value) {
+    const firebaseUrl = ConfigController.getProperty('firebaseUrl').replace(/\/$/, '');
+    let pathParts = [];
+    if (TypeUtil.isString(value)) {
+        pathParts = value
+            .replace(firebaseUrl, '')
+            .replace(/\/$/, '')
+            .replace(/^\//, '')
+            .split('/');
+    } else if (TypeUtil.isArray(value)) {
+        pathParts = value;
+    } else {
+        throw new Throwables.illegalArgumentBug('value', value, 'must be a string or an array of strings');
+    }
+    return ([firebaseUrl])
+        .concat(
+            pathParts.map((pathPart) => {
+                return Firebase.escapePathPart(pathPart);
+            })
+        )
+        .join('/');
 };
 
 /**

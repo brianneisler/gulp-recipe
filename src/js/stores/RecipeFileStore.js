@@ -4,9 +4,12 @@
 
 import {
     Class,
-    Obj
+    Obj,
+    Promises
 } from 'bugcore';
-import RecipeStoreCache from './RecipeStoreCache';
+import { RecipeFileCache } from '../caches';
+import { RecipeFile } from '../core';
+
 
 
 //-------------------------------------------------------------------------------
@@ -17,9 +20,9 @@ import RecipeStoreCache from './RecipeStoreCache';
  * @class
  * @extends {Obj}
  */
-const RecipeStore = Class.extend(Obj, {
+const RecipeFileStore = Class.extend(Obj, {
 
-    _name: 'recipe.RecipeStore',
+    _name: 'recipe.RecipeFileStore',
 
 
     //-------------------------------------------------------------------------------
@@ -28,9 +31,8 @@ const RecipeStore = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {string} recipesDir
      */
-    _constructor(recipesDir) {
+    _constructor() {
 
         this._super();
 
@@ -39,17 +41,12 @@ const RecipeStore = Class.extend(Obj, {
         // Private Properties
         //-------------------------------------------------------------------------------
 
+        //TODO BRN: Add watchers for when recipeFiles change. On change, delete cache entry (or reload file and update cache)
         /**
          * @private
-         * @type {RecipeStoreCache}
+         * @type {RecipeFileCache}
          */
-        this.recipeStoreCache       = new RecipeStoreCache();
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.recipesDir             = recipesDir;
+        this.recipeFileCache        = new RecipeFileCache();
     },
 
 
@@ -58,17 +55,10 @@ const RecipeStore = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {RecipeStoreCache}
+     * @return {RecipeFileCache}
      */
-    getRecipeStoreCache() {
-        return this.recipeStoreCache;
-    },
-
-    /**
-     * @return {string}
-     */
-    getRecipesDir() {
-        return this.recipesDir;
+    getRecipeFileCache() {
+        return this.recipeFileCache;
     },
 
 
@@ -76,8 +66,20 @@ const RecipeStore = Class.extend(Obj, {
     // Public Methods
     //-------------------------------------------------------------------------------
 
-    loadRecipe(recipeName, recipeVersion) {
-
+    /**
+     * @param {string} recipeFilePath
+     * @return {Promise<RecipeFile>}
+     */
+    loadRecipeFile(recipeFilePath) {
+        const recipeFile = this.recipeFileCache.getRecipeFile(recipeFilePath);
+        if (!recipeFile) {
+            return RecipeFile.loadFromFile(recipeFilePath)
+                .then((loadedRecipeFile) => {
+                    this.recipeFileCache.setRecipeFile(recipeFilePath, loadedRecipeFile);
+                    return loadedRecipeFile;
+                });
+        }
+        return Promises.resolve(recipeFile);
     }
 });
 
@@ -86,4 +88,4 @@ const RecipeStore = Class.extend(Obj, {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default RecipeStore;
+export default RecipeFileStore;

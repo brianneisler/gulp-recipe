@@ -4,6 +4,7 @@
 
 import {
     Class,
+    IObjectable,
     ObjectUtil
 } from 'bugcore';
 import Firebase from '../util/Firebase';
@@ -23,37 +24,125 @@ const Entity = Class.extend(Firebase, {
 
 
     //-------------------------------------------------------------------------------
-    // Public Methods
+    // Constructor
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {*} value
+     * @constructs
+     * @param {*} pathData
+     * @param {Object} rawData
+     */
+    _constructor(pathData, rawData) {
+
+        this._super(pathData);
+
+
+        //-------------------------------------------------------------------------------
+        // Public Properties
+        //-------------------------------------------------------------------------------
+
+        /**
+         * @private
+         * @type {Object}
+         */
+        this.rawData = rawData;
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Init Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {Entity}
+     */
+    init: function() {
+        const _this = this._super();
+
+        if (_this) {
+            _this.on('value', (snapshot) => {
+                _this.rawData = snapshot.val();
+            });
+        }
+        return _this;
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Getters and Setters
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {Object}
+     */
+    getRawData() {
+        return this.rawData;
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Firebase Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @param {*} rawData
      * @param {function=} onComplete
      * @return {Firebase}
      */
-    push(value, onComplete) {
-        this.addTime(value);
-        return this._super(value, onComplete);
+    push(rawData, onComplete) {
+        this.addTime(rawData);
+        return this._super(rawData, onComplete);
     },
 
     /**
      * @method Entity#set
-     * @param {*} value
+     * @param {*} rawData
      * @param {function=} onComplete
      */
-    set(value, onComplete) {
-        this.addTime(value);
-        this._super(value, onComplete);
+    set(rawData, onComplete) {
+        this.addTime(rawData);
+        return this._super(rawData, onComplete);
     },
 
     /**
      * @method Entity#update
-     * @param {Object} value
+     * @param {Object} rawData
      * @param {function=} onComplete
      */
-    update(value, onComplete) {
-        this.addUpdatedAt(value);
-        this._super(value, onComplete);
+    update(rawData, onComplete) {
+        this.addUpdatedAt(rawData);
+        return this._super(rawData, onComplete);
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Public Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {boolean}
+     */
+    hasData() {
+        return this.rawData !== null;
+    },
+
+    /**
+     * @return {string}
+     */
+    toPath() {
+        return this.toString();
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // IObjectable Implementation
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @return {Object}
+     */
+    toObject() {
+        return this.rawData;
     },
 
 
@@ -67,10 +156,10 @@ const Entity = Class.extend(Firebase, {
      *  createdAt: number,
      *  id: string,
      *  updatedAt: number
-     * }} entity
+     * }} rawData
      */
-    addCreatedAt(entity) {
-        ObjectUtil.assign(entity, { createdAt: Firebase.timestamp() });
+    addCreatedAt(rawData) {
+        ObjectUtil.assign(rawData, { createdAt: Firebase.timestamp() });
     },
 
     /**
@@ -79,11 +168,11 @@ const Entity = Class.extend(Firebase, {
      *  createdAt: number,
      *  id: string,
      *  updatedAt: number
-     * }} entity
+     * }} rawData
      */
-    addTime(entity) {
-        this.addCreatedAt(entity);
-        this.addUpdatedAt(entity);
+    addTime(rawData) {
+        this.addCreatedAt(rawData);
+        this.addUpdatedAt(rawData);
     },
 
     /**
@@ -92,12 +181,19 @@ const Entity = Class.extend(Firebase, {
      *  createdAt: number,
      *  id: string,
      *  updatedAt: number
-     * }} entity
+     * }} rawData
      */
-    addUpdatedAt(entity) {
-        ObjectUtil.assign(entity, { updatedAt: Firebase.timestamp() });
+    addUpdatedAt(rawData) {
+        ObjectUtil.assign(rawData, { updatedAt: Firebase.timestamp() });
     }
 });
+
+
+//-------------------------------------------------------------------------------
+// Interfaces
+//-------------------------------------------------------------------------------
+
+Class.implement(Entity, IObjectable);
 
 
 //-------------------------------------------------------------------------------

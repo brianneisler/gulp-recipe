@@ -5,7 +5,7 @@
 import {
     Class
 } from 'bugcore';
-import Firebase from '../util/Firebase';
+import { Firebase } from '../util';
 
 
 //-------------------------------------------------------------------------------
@@ -16,8 +16,8 @@ import Firebase from '../util/Firebase';
  * @class
  * @extends {Firebase}
  */
-const EmailToUserId = Class.extend(Firebase, {
-    _name: 'recipe.EmailToUserId'
+const EmailToUserIdIndex = Class.extend(Firebase, {
+    _name: 'recipe.EmailToUserIdIndex'
 });
 
 
@@ -30,8 +30,8 @@ const EmailToUserId = Class.extend(Firebase, {
  * @param {string} email
  * @return {Fireproof}
  */
-EmailToUserId.getUserIdForEmail = function(email) {
-    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
+EmailToUserIdIndex.getUserIdForEmail = function(email) {
+    return (new EmailToUserIdIndex(['indexes', 'emailToUserId', email]))
         .proof();
 };
 
@@ -40,8 +40,8 @@ EmailToUserId.getUserIdForEmail = function(email) {
  * @param {string} email
  * @return {Promise}
  */
-EmailToUserId.removeUserIdForEmail = function(email) {
-    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
+EmailToUserIdIndex.removeUserIdForEmail = function(email) {
+    return (new EmailToUserIdIndex(['indexes', 'emailToUserId', email]))
         .proof()
         .remove();
 };
@@ -50,10 +50,10 @@ EmailToUserId.removeUserIdForEmail = function(email) {
  * @static
  * @param {string} email
  * @param {string} userId
- * @returns {Promise}
+ * @return {Promise}
  */
-EmailToUserId.setUserIdForEmail = function(email, userId) {
-    return (new EmailToUserId(['indexes', 'emailToUserId', Firebase.escapePathPart(email)]))
+EmailToUserIdIndex.setUserIdForEmail = function(email, userId) {
+    return (new EmailToUserIdIndex(['indexes', 'emailToUserId', email]))
         .proof()
         .set(userId);
 };
@@ -63,4 +63,4 @@ EmailToUserId.setUserIdForEmail = function(email, userId) {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default EmailToUserId;
+export default EmailToUserIdIndex;
