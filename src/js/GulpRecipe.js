@@ -125,8 +125,11 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {Promise}
      */
     context(options) {
-        ContextController.establishContext(options);
-        return ConfigController.loadConfigChain();
+        ContextController.establishRecipeContext(options);
+        return ConfigController.loadConfigChain()
+            .then(() => {
+                return AuthController.auth();
+            });
     },
 
     /**
@@ -166,7 +169,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
+     * @return {Promise<RecipeInstall>}
      */
     install: function(recipeQuery, options) {
         options = this.defineOptions(options, {

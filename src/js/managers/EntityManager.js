@@ -41,7 +41,7 @@ const EntityManager = Class.extend(Obj, {
         // Private Properties
         //-------------------------------------------------------------------------------
 
-        //TODO BRN: Add watchers for when Entitys change. On change, delete cache entry (or reload file and update cache)
+        //TODO BRN: Add watchers for when Entities change. On change, delete cache entry (or reload file and update cache)
 
         /**
          * @private

@@ -155,25 +155,25 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @param {string} recipeQuery
-     * @return {Promise}
+     * @return {Promise<RecipeInstall>}
      */
     installRecipe(recipeQuery) {
         return QueryController.query(recipeQuery)
             .then((recipeQueryResult) => {
-                return this.ensureRecipeInstalled(recipeQueryResult.getName(), recipeQueryResult.getVersion());
+                return this.ensureRecipeInstalled(recipeQueryResult.getName(), recipeQueryResult.getVersionNumber());
             });
     },
 
     /**
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @returns {Promise<Recipe>}
      */
-    loadRecipe(recipeName, recipeVersion) {
+    loadRecipe(recipeName, recipeVersionNumber) {
         return Promises.try(() => {
-            const context = ContextController.getCurrentContext();
-            const recipeStore = this.generateRecipeStore(context);
-            return recipeStore.loadRecipe(recipeName, recipeVersion);
+            const recipeContext     = ContextController.getCurrentRecipeContext();
+            const recipeStore       = this.generateRecipeStore(recipeContext);
+            return recipeStore.loadRecipe(recipeName, recipeVersionNumber);
         });
     },
 
@@ -201,10 +201,7 @@ const RecipeController = Class.extend(Obj, {
      * @return {Promise<PublishKeyEntity>}
      */
     publishRecipe(recipePath) {
-        return AuthController.auth()
-            .then(() => {
-                return this.loadRecipeFile(recipePath);
-            })
+        return this.loadRecipeFile(recipePath)
             .then((recipeFile) => {
                 return this.validateNewRecipe(recipeFile);
             })
@@ -216,14 +213,14 @@ const RecipeController = Class.extend(Obj, {
             })
             .then((results) => {
                 const [recipeFile, recipePackage] = results;
-                return this.ensureRecipeCreated(recipeFile.getName())
-                    .then((recipeEntity) => {
-                        return [recipeFile, recipePackage, recipeEntity];
+                return this.verifyCurrentUserAccessToRecipe(recipeFile.getName())
+                    .then(() => {
+                        return [recipeFile, recipePackage];
                     });
             })
             .then((results) => {
-                const [recipeFile, recipePackage, recipeEntity] = results;
-                return this.verifyCurrentUserAccessToRecipe(recipeEntity)
+                const [recipeFile, recipePackage] = results;
+                return this.ensureRecipeCreated(recipeFile.getName())
                     .then(() => {
                         return [recipeFile, recipePackage];
                     });
@@ -311,14 +308,18 @@ const RecipeController = Class.extend(Obj, {
      * @return {Promise<RecipeEntity>}
      */
     createRecipeEntity(rawData) {
-        return AuthController.getCurrentUser()
-            .then((currentUser) => {
-                ObjectUtil.assign(rawData, {
-                    scope: 'public',
-                    type: 'gulp'
-                });
-                return RecipeManager.create(rawData, currentUser.getUserData());
+        return Promises.try(() => {
+            return AuthController.getCurrentUser();
+        }).then((currentUser) => {
+            if (currentUser.isAnonymous()) {
+                throw Throwables.exception('UserIsAnonymous');
+            }
+            ObjectUtil.assign(rawData, {
+                scope: 'public',
+                type: 'gulp'
             });
+            return RecipeManager.create(rawData, currentUser.getUserData());
+        });
     },
 
     /**
@@ -334,10 +335,10 @@ const RecipeController = Class.extend(Obj, {
     /**
      * @private
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {Promise}
      */
-    doRecipeInstall(recipeName, recipeVersion) {
+    doRecipeInstall(recipeName, recipeVersionNumber) {
         // TODO BRN:
 
         //-- check download cache to see if recipe has already been downloaded (ConfigController.get('cache')[default: $HOME/.recipe])
@@ -348,24 +349,20 @@ const RecipeController = Class.extend(Obj, {
         //-- copy taball to local install at [execPath]/.recipe/[recipeType]/[recipeScope]/[recipeName]/[recipeVersion] and extract
         //-- install npmDependencies in to local recipe folder [execPath]/.recipe/[recipeType]/[recipeScope]/[recipeName]/[recipeVersion]/node_modules
 
-        return RecipeManager.get({recipeName, recipeScope: 'public', recipeType: 'gulp'})
+        return this.loadRecipeEntity(recipeName)
             .then((recipeEntity) => {
                 if (!recipeEntity) {
                     throw new Throwables.exception('RecipeDoesNotExist', {}, 'A gulp-recipe by the name "' + recipeName + '" does not exist.');
                 }
-                if (recipeVersionQuery) {
-                    return this.resolveRecipeVersionQuery(recipeVersionQuery);
-                }
-                //
-                return snapshot.val().lastPublishedVersion;
+                return recipeEntity;
             })
-            .then((recipeVersionNumber) => {
-                return this.loadRecipeVersionEntity(recipeName, recipeVersionNumber)
+            .then((recipeEntity) => {
+                return this.loadRecipeVersionEntity(recipeEntity.getName(), recipeVersionNumber)
                     .then((entity) => {
                         if (!entity) {
                             throw new Throwables.exception('RecipeVersionDoesNotExist', {}, 'Cannot find version "' + recipeVersionNumber + '" for gulp-recipe "' + recipeName + '".');
                         }
-                        return entity;
+                        return [recipeEntity, entity];
                     });
             });
             /*.then((recipeVersion) => {
@@ -393,9 +390,7 @@ const RecipeController = Class.extend(Obj, {
      * @return {Promise<RecipeEntity>}
      */
     ensureRecipeCreated(recipeName) {
-        const recipeScope   = 'public';
-        const recipeType    = 'gulp';
-        return RecipeManager.get({ recipeName, recipeType, recipeScope })
+        return this.loadRecipeEntity(recipeName)
             .then((recipeEntity) => {
                 if (!recipeEntity) {
                     return this.createRecipeEntity({ name:recipeName });
@@ -427,14 +422,14 @@ const RecipeController = Class.extend(Obj, {
     /**
      * @private
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {Promise}
      */
-    ensureRecipeInstalled(recipeName, recipeVersion) {
-        return this.loadRecipe(recipeName, recipeVersion)
+    ensureRecipeInstalled(recipeName, recipeVersionNumber) {
+        return this.loadRecipe(recipeName, recipeVersionNumber)
             .then((recipe) => {
                 if (!recipe) {
-                    return this.doRecipeInstall(recipeName, recipeVersion);
+                    return this.doRecipeInstall(recipeName, recipeVersionNumber);
                 }
             });
     },
@@ -471,12 +466,12 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @private
-     * @param {RecipeContext} context
+     * @param {RecipeContext} recipeContext
      * @returns {RecipeStore}
      */
-    generateRecipeStore(context) {
-        const recipesDir    = path.resolve(context.getExecPath(), RecipeController.RECIPE_DIR_NAME);
-        let recipeStore     = this.recipesDirToRecipeStoreMap.get(context);
+    generateRecipeStore(recipeContext) {
+        const recipesDir    = path.resolve(recipeContext.getExecPath(), RecipeController.RECIPE_DIR_NAME);
+        let recipeStore     = this.recipesDirToRecipeStoreMap.get(recipesDir);
         if (!recipeStore) {
             recipeStore         = new RecipeStore(recipesDir);
             this.recipesDirToRecipeStoreMap.put(recipesDir, recipeStore);
@@ -552,6 +547,19 @@ const RecipeController = Class.extend(Obj, {
     /**
      * @private
      * @param {string} recipeName
+     * @return {Promise<RecipeEntity>}
+     */
+    loadRecipeEntity(recipeName) {
+        return RecipeManager.get({
+            recipeName,
+            recipeScope: 'public',
+            recipeType: 'gulp'
+        });
+    },
+
+    /**
+     * @private
+     * @param {string} recipeName
      * @param {string} versionNumber
      * @return {Promise<RecipeVersionEntity>}
      */
@@ -562,38 +570,6 @@ const RecipeController = Class.extend(Obj, {
             recipeType: 'gulp',
             versionNumber
         });
-    },
-
-    /**
-     * @private
-     * @param {string} recipeQuery
-     * @return {{
-     *      name: string,
-     *      versionQuery: string
-     * }}
-     */
-    parseRecipeQuery(recipeQuery) {
-        if (recipeQuery.indexOf('@') > -1) {
-            const parts = recipeQuery.split('@');
-            return {
-                name: parse[0],
-                versionQuery: parts[1]
-            };
-        }
-        return {
-            name: recipeQuery,
-            versionQuery: ''
-        };
-    },
-
-    /**
-     * @private
-     * @param {string} recipeVersionQuery
-     * @returns {Promise}
-     */
-    resolveRecipeVersionQuery(recipeVersionQuery) {
-        //TODO BRN: resolve the query to the correct version for this query.
-        return Promises.resolve(recipeVersionQuery);
     },
 
     /**
@@ -665,20 +641,29 @@ const RecipeController = Class.extend(Obj, {
 
     /**
      * @private
-     * @param {RecipeEntity} recipeEntity
+     * @param {string} recipeName
      * @return {Promise}
      */
-    verifyCurrentUserAccessToRecipe(recipeEntity) {
-        return AuthController.getCurrentUser()
-            .then((currentUser) => {
-                return RecipeCollaboratorManager.get({
-                    recipeName: recipeEntity.getName(),
-                    userId: currentUser.getUserData().getId()
-                });
-            })
-            .then((entity) => {
-                if (!entity) {
-                    throw Throwables.exception('AccessDenied', {}, 'User does not have access to publish to recipe "' + recipeEntity.getName() + '"');
+    verifyCurrentUserAccessToRecipe(recipeName) {
+        return this.loadRecipeEntity(recipeName)
+            .then((recipeEntity) => {
+                if (recipeEntity) {
+                    return Promises.try(() => {
+                        return AuthController.getCurrentUser();
+                    }).then((currentUser) => {
+                        if (currentUser.isAnonymous()) {
+                            return null;
+                        }
+                        return RecipeCollaboratorManager.get({
+                            recipeName: recipeName,
+                            userId: currentUser.getUserId()
+                        });
+                    })
+                    .then((entity) => {
+                        if (!entity) {
+                            throw Throwables.exception('AccessDenied', {}, 'User does not have access to publish to recipe "' + recipeName + '"');
+                        }
+                    });
                 }
             });
     }

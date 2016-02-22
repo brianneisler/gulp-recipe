@@ -49,7 +49,7 @@ const InstallCommand = Class.extend(Command, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string} recipePath
+     * @param {string} recipeQuery
      * @param {{
      *      global: ?boolean,
      *      project: ?boolean,
@@ -61,8 +61,8 @@ const InstallCommand = Class.extend(Command, {
         return Promises.try(() => {
             options = this.refineTargetOption(options, 'project');
             return GulpRecipe.install(recipeQuery, options)
-                .then((installedRecipe) => {
-                    console.log('Recipe installed ' + installedRecipe.name + '@' + installedRecipe.version);
+                .then((recipeInstall) => {
+                    console.log('Recipe installed ' + recipeInstall.name + '@' + recipeInstall.version);
                 })
                 .catch((error) => {
                     console.log('Install failed.');

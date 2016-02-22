@@ -12,7 +12,10 @@ import {
     TypeUtil
 } from 'bugcore';
 import firebase from 'Firebase';
-import { ConfigController } from '../controllers';
+import {
+    ConfigController,
+    ContextController
+} from '../controllers';
 import Fireproof from './Fireproof';
 
 
@@ -55,7 +58,7 @@ const Firebase = Class.extend(Obj, {
         if (ref instanceof firebase) {
             this._ref = ref;
         } else {
-            this._ref = new firebase(Firebase.path(ref));
+            this._ref = new firebase(Firebase.path(ref), Firebase.userContext());
         }
     },
 
@@ -404,6 +407,15 @@ Firebase.unescapePathPart = function(pathPart) {
         .replaceAll('(PI)', '|')
         .replaceAll('(CC)', '}')
         .build();
+};
+
+/**
+ * @static
+ * @return {string}
+ */
+Firebase.userContext = function() {
+    const userContext = ContextController.getCurrentUserContext();
+    return userContext.getUserId();
 };
 
 

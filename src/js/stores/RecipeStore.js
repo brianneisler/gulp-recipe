@@ -79,20 +79,21 @@ const RecipeStore = Class.extend(Obj, {
 
     /**
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {Promise<Recipe>}
      */
-    loadRecipe(recipeName, recipeVersion) {
+    loadRecipe(recipeName, recipeVersionNumber) {
         return Promises.try(() => {
-            const recipe = this.recipeCache.getRecipe(recipeName, recipeVersion);
+            const recipe = this.recipeCache.getRecipe(recipeName, recipeVersionNumber);
             if (!recipe) {
-                return this.doLoadRecipe(recipeName, recipeVersion)
+                return this.doLoadRecipe(recipeName, recipeVersionNumber)
                     .then((loadedRecipe) => {
                         this.currentRecipeStore
                     });
             }
             return recipe;
         });
+        //TODO BRN:
         //- check in memory store to see if recipe has already been loaded in to memory
         //- if not in memory store
         //-- check if recipe is installed by checking if the recipe path exists [execPath]/.recipe/[recipeType]/[recipeScope]/[recipeName]/[recipeVersion]

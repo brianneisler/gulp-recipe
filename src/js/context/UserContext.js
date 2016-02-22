@@ -4,7 +4,6 @@
 
 import {
     Class,
-    IObjectable,
     Obj,
     TypeUtil
 } from 'bugcore';
@@ -18,9 +17,9 @@ import {
  * @class
  * @extends {Obj}
  */
-const UserData = Class.extend(Obj, {
+const UserContext = Class.extend(Obj, {
 
-    _name: 'recipe.UserData',
+    _name: 'recipe.UserContext',
 
 
     //-------------------------------------------------------------------------------
@@ -29,31 +28,44 @@ const UserData = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {{
-     *      anonymous: boolean,
-     *      id: string
-     * }} data
      */
-    _constructor(data) {
+    _constructor() {
 
         this._super();
 
 
         //-------------------------------------------------------------------------------
-        // Public Properties
+        // Private Properties
         //-------------------------------------------------------------------------------
-
-        /**
-         * @private
-         * @type {boolean}
-         */
-        this.anonymous      = TypeUtil.isBoolean(data.anonymous) ? data.anonymous : false;
 
         /**
          * @private
          * @type {string}
          */
-        this.id             = data.id;
+        this.userId       = '';
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Init Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @param {{
+     *      userId: string=
+     * }=} options
+     * @return {UserContext}
+     */
+    init(options) {
+        const _this = this._super();
+        if (_this) {
+            if (TypeUtil.isObject(options) && TypeUtil.isString(options.userId)) {
+                _this.userId = options.userId;
+            } else {
+                _this.userId = 'anonymous';
+            }
+        }
+        return _this;
     },
 
 
@@ -62,29 +74,10 @@ const UserData = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {boolean}
-     */
-    getAnonymous() {
-        return this.anonymous;
-    },
-
-    /**
      * @return {string}
      */
-    getId() {
-        return this.id;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Convenience Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {boolean}
-     */
-    isAnonymous() {
-        return this.getAnonymous();
+    getUserId() {
+        return this.userId;
     },
 
 
@@ -98,9 +91,9 @@ const UserData = Class.extend(Obj, {
      * @return {boolean}
      */
     equals(value) {
-        if (Class.doesExtend(value, UserData)) {
+        if (Class.doesExtend(value, UserContext)) {
             return (
-                Obj.equals(value.getId(), this.id)
+                Obj.equals(value.getUserId(), this.userId)
             );
         }
         return false;
@@ -112,37 +105,16 @@ const UserData = Class.extend(Obj, {
      */
     hashCode() {
         if (!this._hashCode) {
-            this._hashCode = Obj.hashCode('[UserData]' +
-                Obj.hashCode(this.id));
+            this._hashCode = Obj.hashCode('[UserContext]' +
+                Obj.hashCode(this.userId));
         }
         return this._hashCode;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // IObjectable Implementation
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {Object}
-     */
-    toObject() {
-        return {
-            id: this.id
-        };
     }
 });
-
-
-//-------------------------------------------------------------------------------
-// Interfaces
-//-------------------------------------------------------------------------------
-
-Class.implement(UserData, IObjectable);
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-export default UserData;
+export default UserContext;

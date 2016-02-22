@@ -11,10 +11,11 @@ import {
     Throwables
 } from 'bugcore';
 import {
-    ConfigController,
-    ContextController
+    AuthController
 } from './';
-import { Firebase } from '../util';
+import {
+    RecipeQueryStore
+} from '../stores';
 
 
 //-------------------------------------------------------------------------------
@@ -48,9 +49,9 @@ const QueryController = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {Map.<RecipeContext, RecipeQueryCache>}
+         * @type {Map.<CurrentUser, RecipeQueryStore>}
          */
-        this.contextToRecipeQueryCacheMap = new Map();
+        this.currentUserToRecipeQueryStoreMap = new Map();
     },
 
 
@@ -59,10 +60,10 @@ const QueryController = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Map.<RecipeContext, RecipeQueryCache>}
+     * @return {Map.<CurrentUser, RecipeQueryStore>}
      */
-    getContextToRecipeQueryCacheMap() {
-        return this.contextToRecipeQueryCacheMap;
+    getCurrentUserToRecipeQueryStoreMap() {
+        return this.currentUserToRecipeQueryStoreMap;
     },
 
 
@@ -75,19 +76,32 @@ const QueryController = Class.extend(Obj, {
      * @return {Promise<QueryResultData>}
      */
     query(recipeQuery) {
-        //- transfrom recipeQuery in to exact recipeName@recipeVersion result
-        //--
-        return this.getCurrentUser()
-            .then((currentUser) => {
-                return this.authWithToken(currentUser.getAuthData().getToken());
-            });
-    }
+        return Promises.try(() => {
+            return AuthController.getCurrentUser();
+        }).then((currentUser) => {
+            const recipeQueryStore = this.generateRecipeQueryStore(currentUser);
+            return recipeQueryStore.query(recipeQuery);
+        });
+    },
 
 
     //-------------------------------------------------------------------------------
     // Private Methods
     //-------------------------------------------------------------------------------
 
+    /**
+     * @private
+     * @param {CurrentUser} currentUser
+     * @return {RecipeQueryStore}
+     */
+    generateRecipeQueryStore(currentUser) {
+        let recipeQueryStore    = this.currentUserToRecipeQueryStoreMap.get(currentUser);
+        if (!recipeQueryStore) {
+            recipeQueryStore        = new RecipeQueryStore();
+            this.currentUserToRecipeQueryStoreMap.put(currentUser, recipeQueryStore);
+        }
+        return recipeQueryStore;
+    }
 });
 
 
@@ -124,11 +138,7 @@ QueryController.getInstance = function() {
 //-------------------------------------------------------------------------------
 
 Proxy.proxy(QueryController, Proxy.method(QueryController.getInstance), [
-    'auth',
-    'login',
-    'getCurrentUser',
-    'logout',
-    'signUp'
+    'query'
 ]);
 
 

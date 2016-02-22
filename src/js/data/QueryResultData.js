@@ -7,6 +7,7 @@ import {
     IObjectable,
     Obj
 } from 'bugcore';
+import { Data } from './';
 
 
 //-------------------------------------------------------------------------------
@@ -15,45 +16,11 @@ import {
 
 /**
  * @class
- * @extends {Obj}
+ * @extends {Data}
  */
-const QueryResultData = Class.extend(Obj, {
+const QueryResultData = Class.extend(Data, {
 
     _name: 'recipe.QueryResultData',
-
-
-    //-------------------------------------------------------------------------------
-    // Constructor
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @constructs
-     * @param {{
-     *      name: string,
-     *      version: string
-     * }} data
-     */
-    _constructor(data) {
-
-        this._super();
-
-
-        //-------------------------------------------------------------------------------
-        // Public Properties
-        //-------------------------------------------------------------------------------
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.name                   = data.name;
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.version                = data.version;
-    },
 
 
     //-------------------------------------------------------------------------------
@@ -64,38 +31,28 @@ const QueryResultData = Class.extend(Obj, {
      * @return {string}
      */
     getName() {
-        return this.name;
+        return this.getRawData().name;
     },
 
     /**
      * @return {string}
      */
-    getVersion() {
-        return this.version;
+    getVersionNumber() {
+        return this.getRawData().versionNumber;
     },
 
 
     //-------------------------------------------------------------------------------
-    // IObjectable Implementation
+    // Data Methods
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Object}
+     * @return {string}
      */
-    toObject() {
-        return {
-            name: this.name,
-            version: this.version
-        };
+    toCacheKey() {
+        return this.name + '-' + this.versionNumber;
     }
 });
-
-
-//-------------------------------------------------------------------------------
-// Interfaces
-//-------------------------------------------------------------------------------
-
-Class.implement(QueryResultData, IObjectable);
 
 
 //-------------------------------------------------------------------------------

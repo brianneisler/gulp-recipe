@@ -93,7 +93,7 @@ const ConfigController = Class.extend(Obj, {
      * @return {*}
      */
     getProperty(key) {
-        const context = ContextController.getCurrentContext();
+        const context = ContextController.getCurrentRecipeContext();
         const configChain = this.getConfigChain(context);
         if (!configChain) {
             throw Throwables.exception('ConfigNotLoaded', {}, 'Must first load the config before getProperty can be called');
@@ -105,7 +105,7 @@ const ConfigController = Class.extend(Obj, {
      * @return {Promise<RecipeConfigChain>}
      */
     loadConfigChain() {
-        const context = ContextController.getCurrentContext();
+        const context = ContextController.getCurrentRecipeContext();
         const configChain = this.getConfigChain(context);
         if (!configChain) {
             return this.buildConfigChainForContext(context)

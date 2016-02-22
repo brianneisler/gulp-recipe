@@ -8,7 +8,10 @@ import {
     Proxy,
     Throwables
 } from 'bugcore';
-import { RecipeContext } from '../context';
+import {
+    RecipeContext,
+    UserContext
+} from '../context';
 
 
 //-------------------------------------------------------------------------------
@@ -44,7 +47,13 @@ const ContextController = Class.extend(Obj, {
          * @private
          * @type {RecipeContext}
          */
-        this.currentContext = null;
+        this.currentRecipeContext   = null;
+
+        /**
+         * @private
+         * @type {UserContext}
+         */
+        this.currentUserContext     = null;
     },
 
 
@@ -55,11 +64,21 @@ const ContextController = Class.extend(Obj, {
     /**
      * @return {RecipeContext}
      */
-    getCurrentContext() {
-        if (!this.currentContext) {
-            throw Throwables.exception('NoCurrentContext', {}, 'Must first establishContext before getting current context');
+    getCurrentRecipeContext() {
+        if (!this.currentRecipeContext) {
+            throw Throwables.exception('NoCurrentContext', {}, 'Must first establishRecipeContext before getting current context');
         }
-        return this.currentContext;
+        return this.currentRecipeContext;
+    },
+
+    /**
+     * @return {UserContext}
+     */
+    getCurrentUserContext() {
+        if (!this.currentUserContext) {
+            throw Throwables.exception('NoCurrentContext', {}, 'Must first establishUserContext before getting current context');
+        }
+        return this.currentUserContext;
     },
 
     /**
@@ -69,16 +88,34 @@ const ContextController = Class.extend(Obj, {
      * }=} options
      * @return {RecipeContext}
      */
-    establishContext(options) {
-        if (!this.currentContext) {
-            this.currentContext = new RecipeContext(options);
+    establishRecipeContext(options) {
+        if (!this.currentRecipeContext) {
+            this.currentRecipeContext = new RecipeContext(options);
         } else {
             const newContext = new RecipeContext(options);
-            if (!Obj.equals(newContext, this.currentContext)) {
-                this.currentContext = newContext;
+            if (!Obj.equals(newContext, this.currentRecipeContext)) {
+                this.currentRecipeContext = newContext;
             }
         }
-        return this.currentContext;
+        return this.currentRecipeContext;
+    },
+
+    /**
+     * @param {{
+     *      userId: string=
+     * }=} options
+     * @return {UserContext}
+     */
+    establishUserContext(options) {
+        if (!this.currentUserContext) {
+            this.currentUserContext = new UserContext(options);
+        } else {
+            const newContext = new UserContext(options);
+            if (!Obj.equals(newContext, this.currentUserContext)) {
+                this.currentUserContext = newContext;
+            }
+        }
+        return this.currentUserContext;
     }
 });
 
@@ -116,8 +153,10 @@ ContextController.getInstance = function() {
 //-------------------------------------------------------------------------------
 
 Proxy.proxy(ContextController, Proxy.method(ContextController.getInstance), [
-    'getCurrentContext',
-    'establishContext'
+    'getCurrentRecipeContext',
+    'getCurrentUserContext',
+    'establishRecipeContext',
+    'establishUserContext'
 ]);
 
 

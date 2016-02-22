@@ -51,10 +51,10 @@ const RecipeQueryCache = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Map.<string, Recipe>}
+     * @return {Map.<string, QueryResultData>}
      */
-    getRecipeNameToRecipeMap() {
-        return this.recipeNameToRecipeMap;
+    getRecipeQueryToQueryResultDataMap() {
+        return this.recipeQueryToQueryResultDataMap;
     },
 
 
@@ -63,27 +63,27 @@ const RecipeQueryCache = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string} recipeName
+     * @param {string} recipeQuery
      * @returns {Recipe}
      */
-    getRecipe(recipeName) {
-        return this.recipeNameToRecipeMap.get(recipeName);
+    get(recipeQuery) {
+        return this.recipeQueryToQueryResultDataMap.get(recipeQuery);
     },
 
     /**
-     * @param {string} recipeName
+     * @param {string} recipeQuery
      * @returns {boolean}
      */
-    hasRecipe(recipeName) {
-        return this.recipeNameToRecipeMap.containsKey(recipeName);
+    has(recipeQuery) {
+        return this.recipeQueryToQueryResultDataMap.containsKey(recipeQuery);
     },
 
     /**
-     * @param {string} recipeName
-     * @param {Recipe} recipe
+     * @param {string} recipeQuery
+     * @param {QueryResultData} queryResultData
      */
-    setRecipe(recipeName, recipe) {
-        this.recipeNameToRecipeMap.put(recipeName, recipe);
+    set(recipeQuery, queryResultData) {
+        this.recipeQueryToQueryResultDataMap.put(recipeQuery, queryResultData);
     }
 });
 

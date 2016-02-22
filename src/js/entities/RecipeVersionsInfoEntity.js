@@ -83,54 +83,6 @@ const RecipeVersionsInfoEntity = Class.extend(Entity, {
      */
     getUpdatedAt() {
         return this.rawData.updatedAt;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Public Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {string}
-     */
-    allHash() {
-        if (!this._allHash) {
-            this._allHash = this.all.join('|');
-        }
-        return this._allHash;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Obj Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @override
-     * @param {*} value
-     * @return {boolean}
-     */
-    equals(value) {
-        if (Class.doesExtend(value, RecipeVersionsInfoEntity)) {
-            return (
-                Obj.equals(value.getLast(), this.getLast()) &&
-                Obj.equals(value.allHash(), this.allHash())
-            );
-        }
-        return false;
-    },
-
-    /**
-     * @override
-     * @return {number}
-     */
-    hashCode() {
-        if (!this._hashCode) {
-            this._hashCode = Obj.hashCode('[RecipeVersionsInfoData]' +
-                Obj.hashCode(this.getLast()) + '_' +
-                Obj.hashCode(this.allHash()));
-        }
-        return this._hashCode;
     }
 });
 

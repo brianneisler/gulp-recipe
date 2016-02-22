@@ -4,11 +4,12 @@
 
 import {
     Class,
+    IObjectable,
+    Obj,
     Promises,
-    Proxy
+    Throwables
 } from 'bugcore';
-import Command from './Command';
-import GulpRecipe from '../GulpRecipe';
+import fs from 'fs-promise';
 
 
 //-------------------------------------------------------------------------------
@@ -17,11 +18,11 @@ import GulpRecipe from '../GulpRecipe';
 
 /**
  * @class
- * @extends {Command}
+ * @extends {Obj}
  */
-const LogoutCommand = Class.extend(Command, {
+const RecipeInstall = Class.extend(Obj, {
 
-    _name: 'recipe.LogoutCommand',
+    _name: 'recipe.RecipeInstall',
 
 
     //-------------------------------------------------------------------------------
@@ -30,8 +31,10 @@ const LogoutCommand = Class.extend(Command, {
 
     /**
      * @constructs
+     * @param {string} installPath
+     * @param {RecipeFile} recipeFile
      */
-    _constructor() {
+    _constructor(installPath, recipeFile) {
 
         this._super();
 
@@ -40,7 +43,17 @@ const LogoutCommand = Class.extend(Command, {
         // Public Properties
         //-------------------------------------------------------------------------------
 
+        /**
+         * @private
+         * @type {string}
+         */
+        this.installPath    = installPath;
 
+        /**
+         * @private
+         * @type {RecipeFile}
+         */
+        this.recipeFile     = recipeFile;
     },
 
 
@@ -48,47 +61,41 @@ const LogoutCommand = Class.extend(Command, {
     // Getters and Setters
     //-------------------------------------------------------------------------------
 
+    /**
+     * @return {string}
+     */
+    getFilePath() {
+        return this.filePath;
+    },
+
+    /**
+     * @return {RecipeFile}
+     */
+    getRecipeFile() {
+        return this.recipeFile;
+    },
+
 
     //-------------------------------------------------------------------------------
-    // Public Methods
+    // IObjectable Implementation
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {{
-     *      global: ?boolean,
-     *      project: ?boolean,
-     *      user: ?boolean
-     * }} options
-     * @return {Promise}
+     * @return {Object}
      */
-    run(options) {
-        return Promises.try(() => {
-            options = this.refineTargetOption(options, 'user');
-            return GulpRecipe.logout(options)
-                .then(() => {
-                    console.log('You are now logged out.');
-                })
-                .catch((error) => {
-                    console.log('Logout failed.');
-                    console.log(error);
-                    console.log(error.stack);
-                    throw error;
-                });
-        });
+    toObject() {
+        return {
+            installPath: this.installPath
+        };
     }
 });
 
 
 //-------------------------------------------------------------------------------
-// Private Static Properties
+// Interfaces
 //-------------------------------------------------------------------------------
 
-/**
- * @static
- * @private
- * @type {LogoutCommand}
- */
-LogoutCommand.instance        = null;
+Class.implement(RecipeInstall, IObjectable);
 
 
 //-------------------------------------------------------------------------------
@@ -97,27 +104,26 @@ LogoutCommand.instance        = null;
 
 /**
  * @static
- * @return {LogoutCommand}
+ * @param {string} filePath
+ * @return {Promise}
  */
-LogoutCommand.getInstance = function() {
-    if (LogoutCommand.instance === null) {
-        LogoutCommand.instance = new LogoutCommand();
-    }
-    return LogoutCommand.instance;
+RecipeInstall.loadFromFile = function(filePath) {
+    return fs.readFile(filePath, 'utf8')
+        .catch((error) => {
+            if (error.code === 'ENOENT') {
+                throw Throwables.exception('NoRecipeInstallFound', {}, 'Could not find recipe file at "' + filePath + '"');
+            }
+            throw error;
+        })
+        .then((data) => {
+            const fileData = JSON.parse(data);
+            return new RecipeInstall(filePath, fileData);
+        });
 };
-
-
-//-------------------------------------------------------------------------------
-// Static Proxy
-//-------------------------------------------------------------------------------
-
-Proxy.proxy(LogoutCommand, Proxy.method(LogoutCommand.getInstance), [
-    'run'
-]);
 
 
 //-------------------------------------------------------------------------------
 // Exports
 //-------------------------------------------------------------------------------
 
-export default LogoutCommand;
+export default RecipeInstall;
