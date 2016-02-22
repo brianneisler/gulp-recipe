@@ -147,7 +147,7 @@ const RecipeQueryStore = Class.extend(Obj, {
         if (recipeQuery.indexOf('@') > -1) {
             const parts = recipeQuery.split('@');
             return {
-                name: parse[0],
+                name: parts[0],
                 versionQuery: parts[1]
             };
         }
