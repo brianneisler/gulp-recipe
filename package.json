@@ -1,6 +1,6 @@
 {
     "name": "gulp-recipe",
-    "version": "0.0.3",
+    "version": "0.1.0",
     "description": "Reusable and sharable recipe declaration system for gulp",
     "main": "index.js",
     "dependencies": {
