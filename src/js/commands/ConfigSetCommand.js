@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -40,8 +39,8 @@ const ConfigSetCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(key, value, options) {
-        return Promises.try(() => {
+    async run(key, value, options) {
+        try {
             options = this.refineTargetOption(options, 'project');
             if (options.bool) {
                 if (value === 'false') {
@@ -53,16 +52,13 @@ const ConfigSetCommand = Class.extend(Command, {
             if (options.int) {
                 value = parseInt(value);
             }
-            return GulpRecipe.configSet(key, value, options)
-                .then(() => {
-                    console.log('Config value set');
-                })
-                .catch((error) => {
-                    console.log('Config set failed');
-                    console.log(error);
-                    throw error;
-                });
-        });
+            await GulpRecipe.configSet(key, value, options);
+            console.log('Config value set');
+        } catch(error) {
+            console.log('Config set failed');
+            console.log(error);
+            throw error;
+        }
     }
 
 

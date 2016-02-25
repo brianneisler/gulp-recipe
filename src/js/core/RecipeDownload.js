@@ -4,12 +4,8 @@
 
 import {
     Class,
-    IObjectable,
-    Obj,
-    Promises,
-    Throwables
+    Obj
 } from 'bugcore';
-import fs from 'fs-promise';
 
 
 //-------------------------------------------------------------------------------
@@ -31,13 +27,10 @@ const RecipeDownload = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {string} filePath
-     * @param {{
-     *      name: string,
-     *      version: string
-     * }} data
+     * @param {string} recipeUrl
+     * @param {RecipePackage} recipePackage
      */
-    _constructor(filePath, data) {
+    _constructor(recipeUrl, recipePackage) {
 
         this._super();
 
@@ -48,21 +41,15 @@ const RecipeDownload = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {string}
+         * @type {RecipePackage}
          */
-        this.filePath   = filePath;
+        this.recipePackage  = recipePackage;
 
         /**
          * @private
          * @type {string}
          */
-        this.name       = data.name;
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.version    = data.version;
+        this.recipeUrl      = recipeUrl;
     },
 
 
@@ -71,87 +58,19 @@ const RecipeDownload = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {string}
+     * @return {RecipePackage}
      */
-    getFilePath() {
-        return this.filePath;
+    getRecipePackage() {
+        return this.recipePackage;
     },
 
     /**
      * @return {string}
      */
-    getName() {
-        return this.name;
-    },
-
-    /**
-     * @return {string}
-     */
-    getVersion() {
-        return this.version;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // IObjectable Implementation
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @return {Object}
-     */
-    toObject() {
-        return {
-            name: this.name,
-            version: this.version
-        };
-    },
-
-
-     //-------------------------------------------------------------------------------
-    // Public Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @param {string} path
-     * @return {Promise}
-     */
-    extractToPath(path) {
-        return Promises.try(() => {
-            //TODO BRN: Extract tarball to given path
-        });
+    getRecipeUrl() {
+        return this.recipeUrl;
     }
 });
-
-
-//-------------------------------------------------------------------------------
-// Interfaces
-//-------------------------------------------------------------------------------
-
-Class.implement(RecipeDownload, IObjectable);
-
-
-//-------------------------------------------------------------------------------
-// Static Methods
-//-------------------------------------------------------------------------------
-
-/**
- * @static
- * @param {string} filePath
- * @return {Promise}
- */
-RecipeDownload.loadFromFile = function(filePath) {
-    return fs.readFile(filePath, 'utf8')
-        .catch((error) => {
-            if (error.code === 'ENOENT') {
-                throw Throwables.exception('NoRecipeDownloadFound', {}, 'Could not find recipe file at "' + filePath + '"');
-            }
-            throw error;
-        })
-        .then((data) => {
-            const fileData = JSON.parse(data);
-            return new RecipeDownload(filePath, fileData);
-        });
-};
 
 
 //-------------------------------------------------------------------------------

@@ -32,7 +32,7 @@ const Command = Class.extend(Obj, {
     /**
      * @abstract
      */
-    run() {
+    async run() {
         throw Throwables.bug('AbstractMethodNotImplemented', {}, 'Must implement Command#run');
     },
 

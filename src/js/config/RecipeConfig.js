@@ -5,7 +5,6 @@
 import {
     Class,
     Config,
-    Promises,
     Throwables
 } from 'bugcore';
 import fs from 'fs-promise';
@@ -80,19 +79,17 @@ const RecipeConfig = Class.extend(Config, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Promise}
+     *
      */
-    saveToFile() {
-        return Promises.try(() => {
-            const json = this.toJson();
-            const options = {
-                encoding: 'utf8',
-                mode: 0o600,
-                flag: 'w'
-            };
-            console.log('Writing to file ', this.filePath);
-            return fs.writeFile(this.filePath, json, options);
-        });
+    async saveToFile() {
+        const json = this.toJson();
+        const options = {
+            encoding: 'utf8',
+            mode: 0o600,
+            flag: 'w'
+        };
+        console.log('Writing to file ', this.filePath);
+        await fs.writeFile(this.filePath, json, options);
     }
 });
 
@@ -105,42 +102,40 @@ const RecipeConfig = Class.extend(Config, {
  * @static
  * @param {string} filePath
  * @param {Object} defaults
- * @return {Promise}
+ * @return {RecipeConfig}
  */
-RecipeConfig.loadFromFile = function(filePath, defaults = {}) {
-    let exists = false;
-    return fs.stat(filePath)
-        .then((stats) => {
-            if (!stats.isFile()) {
-                throw Throwables.exception('ConfigNotAFile', {}, 'The config path "' + filePath + '" is not a file');
-            }
-            const perms = stats.mode.toString(8);
-            if (perms.substr(3) !== '600') {
-                throw Throwables.exception('BadConfigSecurityPerms', {}, 'Cannot read a config file with perms "' + perms.substr(3) + '. Perms must be 600');
-            }
-            return fs.readFile(filePath, 'utf8')
-                .then((data) => {
-                    if (!data) {
-                        return {};
-                    }
-                    return JSON.parse(data);
-                });
-        })
-        .then((data) => {
-            exists = true;
-            return data;
-        })
-        .catch((throwable) => {
-            if (throwable.code !== 'ENOENT') {
-                throw throwable;
-            }
-            return defaults;
-        })
-        .then((data) => {
-            const recipeConfig = new RecipeConfig(filePath, exists);
-            recipeConfig.updateProperties(data);
-            return recipeConfig;
-        });
+RecipeConfig.loadFromFile = async function(filePath, defaults = {}) {
+    let exists      = false;
+    let data        = defaults;
+    try {
+        await RecipeConfig.validateConfigFile(filePath);
+        const fileData = await fs.readFile(filePath, 'utf8');
+        data = fileData ? JSON.parse(fileData) : {};
+        exists = true;
+    } catch(throwable) {
+        if (throwable.code !== 'ENOENT') {
+            throw throwable;
+        }
+    }
+
+    const recipeConfig = new RecipeConfig(filePath, exists);
+    recipeConfig.updateProperties(data);
+    return recipeConfig;
+};
+
+/**
+ * @static
+ * @param {string} filePath
+ */
+RecipeConfig.validateConfigFile = async function(filePath) {
+    const stats     = await fs.stat(filePath);
+    if (!stats.isFile()) {
+        throw Throwables.exception('ConfigNotAFile', {}, 'The config path "' + filePath + '" is not a file');
+    }
+    const perms = stats.mode.toString(8);
+    if (perms.substr(3) !== '600') {
+        throw Throwables.exception('BadConfigSecurityPerms', {}, 'Cannot read a config file with perms "' + perms.substr(3) + '. Perms must be 600');
+    }
 };
 
 

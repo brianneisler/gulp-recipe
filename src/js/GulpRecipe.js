@@ -12,6 +12,8 @@ import {
     TypeUtil
 } from 'bugcore';
 import path from 'path';
+import * as commands from './commands';
+import * as config from './config';
 import * as controllers from './controllers';
 import * as core from './core';
 import * as data from './data';
@@ -70,16 +72,14 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
+     * @return {{deleted: boolean, exists: boolean, key: *, value: *}}
      */
-    configDelete(key, options) {
+    async configDelete(key, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
-        return this.context(options)
-            .then(() => {
-                return ConfigController.deleteConfigProperty(key);
-            });
+        await this.context(options);
+        return await ConfigController.deleteConfigProperty(key);
     },
 
     /**
@@ -87,16 +87,14 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @returns {Promise}
+     * @return {*}
      */
-    configGet(key, options) {
+    async configGet(key, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
-        return this.context(options)
-            .then(() => {
-                return ConfigController.getConfigProperty(key);
-            });
+        await this.context(options);
+        return await ConfigController.getConfigProperty(key);
     },
 
     /**
@@ -107,14 +105,12 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    configSet(key, value, options) {
+    async configSet(key, value, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
-        return this.context(options)
-            .then(() => {
-                return ConfigController.setConfigProperty(key, value);
-            });
+        await this.context(options);
+        await ConfigController.setConfigProperty(key, value);
     },
 
     /**
@@ -122,29 +118,26 @@ const GulpRecipe = Class.extend(Obj, {
      *      execPath: string=,
      *      target: string=
      * }=} options
-     * @return {Promise}
      */
-    context(options) {
+    async context(options) {
         ContextController.establishRecipeContext(options);
-        return ConfigController.loadConfigChain()
-            .then(() => {
-                return AuthController.auth();
-            });
+        await ConfigController.loadConfigChain();
+        await AuthController.auth();
     },
 
     /**
+     * @param {string} recipeQuery
      * @param {{
-     *      main: string,
-     *      name: string,
-     *      npmDependencies: Object.<string, string>,
-     *      version: string
-     * }} recipeObject
+     *      target: string=
+     * }=} options
      * @return {Recipe}
      */
-    define(recipeObject) {
-        const recipe = new core.Recipe(recipeObject);
-        this.recipeStore.setRecipe(recipe.getName(), recipe);
-        return recipe;
+    async get(recipeQuery, options) {
+        options = this.defineOptions(options, {
+            target: 'project'
+        });
+        await this.context(options);
+        return await RecipeController.getRecipe(recipeQuery);
     },
 
     /**
@@ -152,33 +145,14 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise<Recipe>}
+     * @return {Recipe}
      */
-    get(recipeQuery, options) {
+    async install(recipeQuery, options) {
         options = this.defineOptions(options, {
             target: 'project'
         });
-        return this.context(options)
-            .then(() => {
-                return RecipeController.getRecipe(recipeQuery);
-            });
-    },
-
-     /**
-     * @param {string} recipeQuery
-     * @param {{
-     *      target: string=
-     * }=} options
-     * @return {Promise<RecipeInstall>}
-     */
-    install: function(recipeQuery, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        return this.context(options)
-            .then(() => {
-                return RecipeController.installRecipe(recipeQuery);
-            });
+        await this.context(options);
+        return await RecipeController.installRecipe(recipeQuery);
     },
 
     /**
@@ -189,30 +163,26 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    login(email, password, options) {
+    async login(email, password, options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
-        return this.context(options)
-            .then(() => {
-                return AuthController.login(email, password);
-            });
+        await this.context(options);
+        return await AuthController.login(email, password);
     },
 
     /**
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
+     * @return {CurrentUser}
      */
-    logout(options) {
+    async logout(options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
-        return this.context(options)
-            .then(() => {
-                return AuthController.logout();
-            });
+        await this.context(options);
+        return await AuthController.logout();
     },
 
     /**
@@ -261,14 +231,12 @@ const GulpRecipe = Class.extend(Obj, {
      * }=} options
      * @return {Promise}
      */
-    signUp(username, email, password, options) {
+    async signUp(username, email, password, options) {
         options = this.defineOptions(options, {
             target: 'user'
         });
-        return this.context(options)
-            .then(() => {
-                return AuthController.signUp(username, email, password);
-            });
+        await this.context(options);
+        return await AuthController.signUp(username, email, password);
     },
 
 
@@ -308,6 +276,18 @@ const GulpRecipe = Class.extend(Obj, {
 //-------------------------------------------------------------------------------
 // Public Static Properties
 //-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.commands     = commands;
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.config       = config;
 
 /**
  * @static

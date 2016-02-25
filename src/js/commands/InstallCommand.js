@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -57,19 +56,17 @@ const InstallCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(recipeQuery, options) {
-        return Promises.try(() => {
+    async run(recipeQuery, options) {
+        try {
             options = this.refineTargetOption(options, 'project');
-            return GulpRecipe.install(recipeQuery, options)
-                .then((recipeInstall) => {
-                    console.log('Recipe installed ' + recipeInstall.name + '@' + recipeInstall.version);
-                })
-                .catch((error) => {
-                    console.log('Install failed.');
-                    console.log(error);
-                    throw error;
-                });
-        });
+            const installedRecipe = await GulpRecipe.install(recipeQuery, options);
+            console.log(installedRecipe.getScope() + ' ' + installedRecipe.getType() +  ' recipe installed ' + installedRecipe.getName() + '@' + installedRecipe.getVersion());
+        } catch(error) {
+            console.log('Install failed.');
+            console.log(error);
+            console.log(error.stack);
+            throw error;
+        }
     }
 });
 

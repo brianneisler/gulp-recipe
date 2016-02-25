@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -37,29 +36,26 @@ const ConfigDeleteCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(key, options) {
-        return Promises.try(() => {
+    async run(key, options) {
+        try {
             options = this.refineTargetOption(options, 'project');
-            return GulpRecipe.configDelete(key, options)
-                .then((results) => {
-                    results.forEach((result) => {
-                        if (!result.exists) {
-                            console.log('config: no config found for context "' + result.context + '"');
-                            return;
-                        }
-                        if (result.deleted) {
-                            console.log('config: value deleted for key:\'' + result.key + '\' value:\'' + result.value + '\'');
-                        } else {
-                            console.log('config: no value found for key:\'' + result.key + '\'');
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.log('Config delete failed');
-                    console.log(error);
-                    throw error;
-                });
-        });
+            const results = await GulpRecipe.configDelete(key, options);
+            results.forEach((result) => {
+                if (!result.exists) {
+                    console.log('config: no config found for context "' + result.context + '"');
+                    return;
+                }
+                if (result.deleted) {
+                    console.log('config: value deleted for key:\'' + result.key + '\' value:\'' + result.value + '\'');
+                } else {
+                    console.log('config: no value found for key:\'' + result.key + '\'');
+                }
+            });
+        } catch(error) {
+            console.log('Config delete failed');
+            console.log(error);
+            throw error;
+        }
     }
 
 

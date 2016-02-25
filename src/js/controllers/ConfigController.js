@@ -9,7 +9,9 @@ import {
     Obj,
     Promises,
     Proxy,
-    Throwables
+    StringUtil,
+    Throwables,
+    TypeUtil
 } from 'bugcore';
 import path from 'path';
 import {
@@ -19,6 +21,7 @@ import {
     RecipeConfig,
     RecipeConfigChain
 } from '../config';
+import _ from 'lodash';
 
 
 //-------------------------------------------------------------------------------
@@ -119,62 +122,51 @@ const ConfigController = Class.extend(Obj, {
 
     /**
      * @param {string} key
-     * @return {Promise}
+     * @return {{deleted: boolean, exists: boolean, key: *, value: *}}
      */
-    deleteConfigProperty(key) {
-        return this.loadConfigChain()
-            .then((configChain) => {
-                const result = {
-                    deleted: false,
-                    exists: false,
-                    key: key,
-                    value: undefined
-                };
-                const config = configChain.getTargetConfig();
-                result.exists = config.getExists();
-                if (config.hasProperty(key)) {
-                    result.value = config.getProperty(key);
-                    result.deleted = config.deleteProperty(key);
-                    if (result.deleted) {
-                        return config.saveToFile()
-                            .then(() => {
-                                return result;
-                            });
-                    }
-                    return Promises.resolve(result);
-                }
-                return Promises.resolve(result);
-            });
+    async deleteConfigProperty(key) {
+        const configChain = await this.loadConfigChain();
+        const result = {
+            deleted: false,
+            exists: false,
+            key: key,
+            value: undefined
+        };
+        const config = configChain.getTargetConfig();
+        result.exists = config.getExists();
+        if (config.hasProperty(key)) {
+            result.value = config.getProperty(key);
+            result.deleted = config.deleteProperty(key);
+            if (result.deleted) {
+                await config.saveToFile();
+            }
+        }
+        return result;
     },
 
     /**
      * @param {string} key
-     * @return {Promise}
+     * @return {*}
      */
-    getConfigProperty(key) {
-        return this.loadConfigChain()
-            .then((configChain) => {
-                return configChain.getProperty(key);
-            });
+    async getConfigProperty(key) {
+        const configChain = await this.loadConfigChain();
+        return configChain.getProperty(key);
     },
 
     /**
      * @param {string} key
      * @param {*} value
-     * @return {Promise}
      */
-    setConfigProperty(key, value) {
-        return this.loadConfigChain()
-            .then((configChain) => {
-                const config = configChain.getTargetConfig();
-                config.setProperty(key, value);
-                return config.saveToFile();
-            });
+    async setConfigProperty(key, value) {
+        const configChain   = await this.loadConfigChain();
+        const config        = configChain.getTargetConfig();
+        config.setProperty(key, value);
+        await config.saveToFile();
     },
 
     /**
      * @param {string} key
-     * @returns {*}
+     * @return {*}
      */
     getConfigOverride(key) {
         return this.configOverride.getProperty(key);
@@ -204,7 +196,7 @@ const ConfigController = Class.extend(Obj, {
      * @private
      * @param {RecipeContext} context
      * @param {string} target
-     * @returns {boolean}
+     * @return {boolean}
      */
     belowTarget(context, target) {
         return ConfigController.TARGET_WEIGHT[context.getTarget()] < ConfigController.TARGET_WEIGHT[target];
@@ -213,26 +205,59 @@ const ConfigController = Class.extend(Obj, {
     /**
      * @private
      * @param {RecipeContext} context
-     * @return {Promise}
+     * @return {RecipeConfigChain}
      */
-    buildConfigChainForContext(context) {
+    async buildConfigChainForContext(context) {
         const execPath      = context.getExecPath();
         const modulePath    = context.getModulePath();
         const userPath      = context.getUserPath();
 
-        return Promises.props({
-            builtIn: RecipeConfig.loadFromFile(path.resolve(modulePath, 'resources', ConfigController.CONFIG_FILE_NAME), ConfigController.BUILT_IN_DEFAULTS),
+        const configs = await Promises.props({
+            builtIn: RecipeConfig.loadFromFile(path.resolve(modulePath, 'resources', ConfigController.CONFIG_FILE_NAME), this.getConfigDefaults()),
             global: '',
             project: this.belowTarget(context, 'project') ? null : RecipeConfig.loadFromFile(path.resolve(execPath, ConfigController.CONFIG_FILE_NAME)),
             user: this.belowTarget(context, 'user') ? null : RecipeConfig.loadFromFile(path.resolve(userPath, ConfigController.CONFIG_FILE_NAME)),
             override: this.configOverride
-        }).then((configs) => {
-            const chain = new RecipeConfigChain(configs, context.getTarget());
-            configs.global = this.belowTarget(context, 'global') ? null : RecipeConfig.loadFromFile(path.resolve(chain.getProperty('prefix'), ConfigController.CONFIG_FILE_NAME));
-            return Promises.props(configs);
-        }).then((configs) => {
-            return new RecipeConfigChain(configs, context.getTarget());
         });
+        const chain = new RecipeConfigChain(configs, context.getTarget());
+        configs.global = this.belowTarget(context, 'global') ? null : RecipeConfig.loadFromFile(path.resolve(chain.getProperty('prefix'), ConfigController.CONFIG_FILE_NAME));
+        await Promises.props(configs);
+        return new RecipeConfigChain(configs, context.getTarget());
+    },
+
+    /**
+     * @private
+     * @return {Object}
+     */
+    getConfigDefaults() {
+        return _.reduce(ConfigController.BUILT_IN_DEFAULTS, (result, value, key) => {
+            return _.assign(result, {
+                [key]: TypeUtil.isString(value) ? this.replaceTokens(value, { home: this.getHomeDir() }) : value
+            });
+        }, {});
+    },
+
+    /**
+     * @private
+     * @return {string}
+     */
+    getHomeDir() {
+        return process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+    },
+
+    /**
+     * @private
+     * @param {string} string
+     * @param {Object} valueMap
+     * @return {string}
+     */
+    replaceTokens(string, valueMap) {
+        const matches = string.match(/\{([a-zA-Z0-9_-]+)\}/g);
+        return _.reduce(matches, (result, match) => {
+            const key = match.substr(1, match.length - 2);
+            const value = !TypeUtil.isUndefined(valueMap[key]) ? valueMap[key] : '';
+            return StringUtil.replaceAll(result, match, value);
+        }, string);
     }
 });
 
@@ -246,6 +271,7 @@ const ConfigController = Class.extend(Obj, {
  * @type {{debug: boolean, firebaseUrl: string, prefix: string, serverUrl: string}}
  */
 ConfigController.BUILT_IN_DEFAULTS  = {
+    cache: '{home}/.recipe',
     debug: false,
     firebaseUrl: 'https://gulp-recipe.firebaseio.com',
     prefix: '/usr/local',

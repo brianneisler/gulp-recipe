@@ -5,9 +5,18 @@
 import {
     Class,
     Obj,
-    Promises
+    Throwables
 } from 'bugcore';
-import { RecipeCache } from '../caches';
+import {
+    RecipeCache
+} from '../caches';
+import {
+    Recipe
+} from '../core';
+import {
+    PathUtil
+} from '../util';
+import fs from 'fs-promise';
 
 
 //-------------------------------------------------------------------------------
@@ -30,8 +39,9 @@ const RecipeStore = Class.extend(Obj, {
     /**
      * @constructs
      * @param {string} recipesDir
+     * @param {RecipeFileStore} recipeFileStore
      */
-    _constructor(recipesDir) {
+    _constructor(recipesDir, recipeFileStore) {
 
         this._super();
 
@@ -51,6 +61,12 @@ const RecipeStore = Class.extend(Obj, {
          * @type {string}
          */
         this.recipesDir         = recipesDir;
+
+        /**
+         * @private
+         * @type {RecipeFileStore}
+         */
+        this.recipeFileStore    = recipeFileStore
     },
 
 
@@ -72,38 +88,55 @@ const RecipeStore = Class.extend(Obj, {
         return this.recipesDir;
     },
 
+    /**
+     * @return {RecipeFileStore}
+     */
+    getRecipeFileStore() {
+        return this.recipeFileStore;
+    },
+
 
     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
      * @param {string} recipeVersionNumber
-     * @return {Promise<Recipe>}
+     * @return {Recipe}
      */
-    loadRecipe(recipeName, recipeVersionNumber) {
-        return Promises.try(() => {
-            const recipe = this.recipeCache.getRecipe(recipeName, recipeVersionNumber);
-            if (!recipe) {
-                return this.doLoadRecipe(recipeName, recipeVersionNumber)
-                    .then((loadedRecipe) => {
-                        this.currentRecipeStore
-                    });
+    async loadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        let recipe = this.recipeCache.get(recipeType, recipeScope, recipeName, recipeVersionNumber);
+        if (!recipe) {
+            recipe = await this.doLoadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber);
+            if (recipe) {
+                this.recipeCache.set(recipeType, recipeScope, recipeName, recipeVersionNumber, recipe);
             }
-            return recipe;
-        });
-        //TODO BRN:
-        //- check in memory store to see if recipe has already been loaded in to memory
-        //- if not in memory store
-        //-- check if recipe is installed by checking if the recipe path exists [execPath]/.recipe/[recipeType]/[recipeScope]/[recipeName]/[recipeVersion]
-        //-- if not installed
-        //--- throw error
-        //-- load recipe package data from [execPath]/.recipe/[recipeType]/[recipeScope]/[recipeName]/[recipeVersion]/recipe.json
-        //-- require main file from recipe package data { "main": "path/to/main"}
-        //-- add recipe to memory store
-        //- return recipe from memory store
+        }
+        return recipe;
+    },
 
+
+    //-------------------------------------------------------------------------------
+    // Private Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
+     * @param {string} recipeName
+     * @param {string} recipeVersionNumber
+     * @return {Recipe}
+     */
+    async doLoadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        const recipeFilePath = PathUtil.resolveRecipeFilePath(this.recipesDir, recipeType, recipeScope, recipeName, recipeVersionNumber);
+        const recipeFile = await this.recipeFileStore.loadRecipeFile(recipeFilePath);
+        if (!recipeFile) {
+            throw Throwables.exception('RecipeDoesNotExist');
+        }
+        return new Recipe(recipeFile);
     }
 });
 

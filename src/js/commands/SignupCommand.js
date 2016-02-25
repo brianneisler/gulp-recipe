@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -61,14 +60,9 @@ const SignupCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(options) {
-        return Promises.try(() => {
-            try {
-                options = this.refineTargetOption(options, 'user');
-            } catch(error) {
-                console.log(error);
-                console.log(error.stack);
-            }
+    async run(options) {
+        try {
+            options = this.refineTargetOption(options, 'user');
             const schema = {
                 properties: {
                     username: {
@@ -88,29 +82,40 @@ const SignupCommand = Class.extend(Command, {
                     }
                 }
             };
-            return this.prompt(schema)
-                .then((result) => {
-                    return GulpRecipe
-                        .signUp(result.username, result.email, result.password, options)
-                        .catch((error) => {
-                            console.log(error);
-                            if (error.code === 'EMAIL_TAKEN') {
-                                //TODO BRN: Handle this...
-                            } else {
-                                throw error;
-                            }
-                        });
-                })
-                .then(() => {
-                    console.log('Success! Thanks for signing up.');
-                })
-                .catch((error) => {
-                    console.log('Signup failed.');
-                    console.log(error);
-                    console.log(error.stack);
-                    throw error;
-                });
-        });
+            const result = await this.prompt(schema);
+            await this.doSignup(result.username, result.email, result.password, options);
+            console.log('Success! Thanks for signing up.');
+        } catch(error) {
+            console.log('Signup failed.');
+            console.log(error);
+            console.log(error.stack);
+            throw error;
+        }
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Private Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @private
+     * @param {string} username
+     * @param {string} email
+     * @param {string} password
+     * @param {{}} options
+     */
+    async doSignup(username, email, password, options) {
+        try {
+            await GulpRecipe.signUp(username, email, password, options);
+        } catch(error) {
+            console.log(error);
+            if (error.code === 'EMAIL_TAKEN') {
+                //TODO BRN: Handle this...
+            } else {
+                throw error;
+            }
+        }
     }
 });
 

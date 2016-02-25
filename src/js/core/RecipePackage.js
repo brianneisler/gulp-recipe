@@ -13,6 +13,7 @@ import fs from 'fs-promise';
 import fse from 'fs-extra';
 import ignore from 'ignore';
 import path from 'path';
+import request from 'request';
 import stream from 'stream';
 import tar from 'tar-fs';
 import zlib from 'zlib';
@@ -87,6 +88,14 @@ const RecipePackage = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @param {string} recipePath
+     */
+    async extractToPath(recipePath) {
+        await fs.ensureDir(recipePath);
+        await this.pipeToDir(recipePath);
+    },
+
+    /**
      * @param {Stream} nextStream
      */
     pipe(nextStream) {
@@ -98,29 +107,67 @@ const RecipePackage = Class.extend(Obj, {
 
     /**
      * @param {string} outputPath
+     */
+    async saveToFile(outputPath) {
+        await fs.ensureFile(outputPath);
+        await this.pipeToFile(outputPath);
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Private Methods
+    //-------------------------------------------------------------------------------
+    /**
+     * @private
+     * @param {string} outputPath
      * @return {Promise}
      */
-    saveToFile(outputPath) {
-        return fs.ensureFile(outputPath)
-            .then(() => {
-                return Promises.promise((resolve, reject) => {
-                    let caughtError = null;
-                    const ws = fs.createWriteStream(outputPath);
-                    const pass = new stream.PassThrough();
-                    this.recipeStream.pipe(ws)
-                        .on('error', (error) => {
-                            caughtError = error;
-                        })
-                        .on('finish', () => {
-                            if (caughtError) {
-                                return reject(caughtError);
-                            }
-                            this.recipeStream = pass;
-                            return resolve();
-                        });
-                    this.recipeStream.pipe(pass);
+    pipeToDir(outputPath) {
+        return Promises.promise((resolve, reject) => {
+            let caughtError = null;
+            const ws        = tar.extract(outputPath);
+            const gunzip    = zlib.createGunzip();
+            const pass      = new stream.PassThrough();
+            this.recipeStream
+                .pipe(gunzip)
+                .pipe(ws)
+                .on('error', (error) => {
+                    caughtError = error;
+                })
+                .on('finish', () => {
+                    if (caughtError) {
+                        return reject(caughtError);
+                    }
+                    this.recipeStream = pass;
+                    return resolve();
                 });
-            });
+            this.recipeStream.pipe(pass);
+        });
+    },
+
+    /**
+     * @private
+     * @param {string} outputPath
+     * @return {Promise}
+     */
+    pipeToFile(outputPath) {
+        return Promises.promise((resolve, reject) => {
+            let caughtError = null;
+            const ws = fs.createWriteStream(outputPath);
+            const pass = new stream.PassThrough();
+            this.recipeStream.pipe(ws)
+                .on('error', (error) => {
+                    caughtError = error;
+                })
+                .on('finish', () => {
+                    if (caughtError) {
+                        return reject(caughtError);
+                    }
+                    this.recipeStream = pass;
+                    return resolve();
+                });
+            this.recipeStream.pipe(pass);
+        });
     }
 });
 
@@ -165,37 +212,52 @@ RecipePackage.IGNORE_FILE_NAME = '.recipeignore';
 /**
  * @static
  * @param {string} recipePath
- * @return {Promise<RecipePackage>}
+ * @return {RecipePackage}
  */
-RecipePackage.fromPath = function(recipePath) {
-    return this.findPackagePaths(recipePath)
-        .then((packagePaths) => {
-            const relativePackagePaths = _.map(packagePaths, (packagePath) => {
-                return path.relative(recipePath, packagePath);
-            });
-            const gzip = zlib.createGzip();
-            const packageStream = tar.pack(recipePath, {
-                entries: relativePackagePaths
-            });
-            return packageStream.pipe(gzip);
-        })
-        .then((recipeStream) => {
-            return RecipePackage.fromStream(recipeStream);
-        });
+RecipePackage.fromPath = async function(recipePath) {
+    const packagePaths = await this.findPackagePaths(recipePath);
+    const relativePackagePaths = _.map(packagePaths, (packagePath) => {
+        return path.relative(recipePath, packagePath);
+    });
+    const gzip = zlib.createGzip();
+    const packageStream = tar.pack(recipePath, {
+        entries: relativePackagePaths
+    });
+    const recipeStream = packageStream.pipe(gzip);
+    return await RecipePackage.fromStream(recipeStream);
 };
 
 /**
  * @static
  * @param {Stream} recipeStream
- * @return {Promise<RecipePackage>}
+ * @return {RecipePackage}
  */
-RecipePackage.fromStream = function(recipeStream) {
-    return RecipePackage.hashRecipeStream(recipeStream)
-        .then((results) => {
-            const [newRecipeStream, recipeHash] = results;
-            return new RecipePackage(newRecipeStream, recipeHash);
-        });
+RecipePackage.fromStream = async function(recipeStream) {
+    const [newRecipeStream, recipeHash] = await RecipePackage.hashRecipeStream(recipeStream);
+    return new RecipePackage(newRecipeStream, recipeHash);
 };
+
+/**
+ * @static
+ * @param {string} tarballPath
+ * @return {RecipePackage}
+ */
+RecipePackage.fromTarball = async function(tarballPath) {
+    const recipeStream = fs.createReadStream(tarballPath);
+    return await RecipePackage.fromStream(recipeStream);
+};
+
+
+/**
+ * @static
+ * @param {string} recipeUrl
+ * @return {RecipePackage}
+ */
+RecipePackage.fromUrl = async function(recipeUrl) {
+    const recipeStream = request(recipeUrl);
+    return await RecipePackage.fromStream(recipeStream);
+};
+
 
 //-------------------------------------------------------------------------------
 // Private Static Methods
@@ -205,18 +267,16 @@ RecipePackage.fromStream = function(recipeStream) {
  * @private
  * @static
  * @param {string} recipePath
- * @return {Promise.<Array<string>>}
+ * @return {Array<string>}
  */
-RecipePackage.findPackagePaths = function(recipePath) {
-    return RecipePackage.walkRecipePath(recipePath)
-        .then((recipePaths) => {
-            const ignoreFilePath = path.resolve(recipePath, RecipePackage.IGNORE_FILE_NAME);
-            const ignoreFile = ignore.select([ignoreFilePath]);
-            return ignore()
-                .addIgnoreFile(ignoreFile)
-                .addPattern(RecipePackage.DEFAULT_IGNORES)
-                .filter(recipePaths);
-        });
+RecipePackage.findPackagePaths = async function(recipePath) {
+    const recipePaths = await RecipePackage.walkRecipePath(recipePath);
+    const ignoreFilePath = path.resolve(recipePath, RecipePackage.IGNORE_FILE_NAME);
+    const ignoreFile = ignore.select([ignoreFilePath]);
+    return ignore()
+        .addIgnoreFile(ignoreFile)
+        .addPattern(RecipePackage.DEFAULT_IGNORES)
+        .filter(recipePaths);
 };
 
 /**

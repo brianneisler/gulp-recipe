@@ -6,7 +6,7 @@ program
     .arguments('[recipe-query]')
     .description('update dependencies for all recipes matching [recipe-query]')
     .action((recipeQuery, options) => {
-        var UpdateCommand = require('../dist/js/commands/UpdateCommand').default;
+        var UpdateCommand = require('..').commands.UpdateCommand;
         UpdateCommand.run(recipeQuery, options)
             .then((updatedRecipes) => {
                 if (updatedRecipes.length > 0) {

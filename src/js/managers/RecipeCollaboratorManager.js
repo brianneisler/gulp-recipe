@@ -45,13 +45,15 @@ const RecipeCollaboratorManager = Class.extend(EntityManager, {
     /**
      * @protected
      * @param {{
+     *      recipeType: string,
+     *      recipeScope: string,
      *      recipeName: string,
      *      userId: string
      * }} pathData
      * @return {string}
      */
     generatePath(pathData) {
-        return Firebase.path(['recipes', 'gulp', 'public', pathData.recipeName, 'collaborators', pathData.userId]);
+        return Firebase.path(['recipes', pathData.recipeType, pathData.recipeScope, pathData.recipeName, 'collaborators', pathData.userId]);
     }
 });
 

@@ -10,7 +10,7 @@ program
     .parse(process.argv);
 
 ((options) => {
-    var LoginCommand = require('../dist/js/commands/LoginCommand').default;
+    var LoginCommand = require('..').commands.LoginCommand;
     LoginCommand.run(options)
         .then(() => {
             process.exit();

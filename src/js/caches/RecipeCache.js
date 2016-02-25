@@ -63,43 +63,51 @@ const RecipeCache = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {boolean}
      */
-    deleteRecipe(recipeName, recipeVersion) {
-        const cacheKey = this.makeCacheKey(recipeName,  recipeVersion);
+    delete(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        const cacheKey = this.makeCacheKey(recipeType, recipeScope, recipeName,  recipeVersionNumber);
         return this.cacheKeyToRecipeMap.delete(cacheKey);
     },
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {Recipe}
      */
-    getRecipe(recipeName, recipeVersion) {
-        const cacheKey = this.makeCacheKey(recipeName,  recipeVersion);
+    get(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        const cacheKey = this.makeCacheKey(recipeType, recipeScope, recipeName,  recipeVersionNumber);
         return this.cacheKeyToRecipeMap.get(cacheKey);
     },
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {boolean}
      */
-    hasRecipe(recipeName, recipeVersion) {
-        const cacheKey = this.makeCacheKey(recipeName,  recipeVersion);
+    has(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        const cacheKey = this.makeCacheKey(recipeType, recipeScope, recipeName,  recipeVersionNumber);
         return this.cacheKeyToRecipeMap.containsKey(cacheKey);
     },
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @param {Recipe} recipe
      * @return {Recipe}
      */
-    setRecipe(recipeName, recipeVersion, recipe) {
-        const cacheKey = this.makeCacheKey(recipeName,  recipeVersion);
+    set(recipeType, recipeScope, recipeName, recipeVersionNumber, recipe) {
+        const cacheKey = this.makeCacheKey(recipeType, recipeScope, recipeName,  recipeVersionNumber);
         return this.cacheKeyToRecipeMap.put(cacheKey, recipe);
     },
 
@@ -110,12 +118,14 @@ const RecipeCache = Class.extend(Obj, {
 
     /**
      * @private
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
-     * @param {string} recipeVersion
+     * @param {string} recipeVersionNumber
      * @return {string}
      */
-    makeCacheKey(recipeName, recipeVersion) {
-        return recipeName + '@' + recipeVersion;
+    makeCacheKey(recipeType, recipeScope, recipeName, recipeVersionNumber) {
+        return recipeType + '@' + recipeScope + '@' + recipeName + '@' + recipeVersionNumber;
     }
 });
 

@@ -9,7 +9,7 @@ program
     .option('-p, --project', 'use project config file')
     .option('-u, --user', 'use user config file')
     .action((key, options) => {
-        var ConfigGetCommand = require('../dist/js/commands/ConfigGetCommand').default;
+        var ConfigGetCommand = require('..').commands.ConfigGetCommand;
         ConfigGetCommand.run(key, options)
             .then(() => {
                 process.exit();

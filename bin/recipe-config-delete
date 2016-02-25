@@ -9,7 +9,7 @@ program
     .option('-p, --project', 'use project config file')
     .option('-u, --user', 'use user config file')
     .action((key, options) => {
-        const ConfigDeleteCommand = require('../dist/js/commands/ConfigDeleteCommand').default;
+        const ConfigDeleteCommand = require('..').commands.ConfigDeleteCommand;
         ConfigDeleteCommand.run(key, options)
             .then(() => {
                 process.exit();

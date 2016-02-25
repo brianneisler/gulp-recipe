@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -61,20 +60,17 @@ const LogoutCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(options) {
-        return Promises.try(() => {
+    async run(options) {
+        try {
             options = this.refineTargetOption(options, 'user');
-            return GulpRecipe.logout(options)
-                .then(() => {
-                    console.log('You are now logged out.');
-                })
-                .catch((error) => {
-                    console.log('Logout failed.');
-                    console.log(error);
-                    console.log(error.stack);
-                    throw error;
-                });
-        });
+            await GulpRecipe.logout(options);
+            console.log('You are now logged out.');
+        } catch(error) {
+            console.log('Logout failed.');
+            console.log(error);
+            console.log(error.stack);
+            throw error;
+        }
     }
 });
 

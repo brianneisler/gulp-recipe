@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -37,23 +36,20 @@ const ConfigGetCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(key, options) {
-        return Promises.try(() => {
+    async run(key, options) {
+        try {
             options = this.refineTargetOption(options, 'project');
-            return GulpRecipe.configGet(key, options)
-                .then((returnedValue) => {
-                    if (returnedValue !== undefined) {
-                        console.log('config - key:"' + key + '" value:' + JSON.stringify(returnedValue));
-                    } else {
-                        console.log('No config value found for key \'' + key + '\'');
-                    }
-                })
-                .catch((error) => {
-                    console.log('Config get failed');
-                    console.log(error);
-                    throw error;
-                });
-        });
+            const returnedValue = await GulpRecipe.configGet(key, options);
+            if (returnedValue !== undefined) {
+                console.log('config - key:"' + key + '" value:' + JSON.stringify(returnedValue));
+            } else {
+                console.log('No config value found for key \'' + key + '\'');
+            }
+        } catch(error) {
+            console.log('Config get failed');
+            console.log(error);
+            throw error;
+        }
     }
 
 

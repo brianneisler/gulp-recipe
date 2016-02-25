@@ -86,43 +86,24 @@ const AuthController = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
-    auth() {
+    async auth() {
         //TODO BRN: Add AuthMonitor to handle cases where user becomes unauthenticated
-        return Promises.try(() => {
-            return this.getCurrentUser();
-        }).then((currentUser) => {
-            if (!currentUser) {
-                currentUser = this.establishAnonymousCurrentUser();
-                return this.loadCurrentUser()
-                    .then((loadedCurrentUser) => {
-                        return this.authWithToken(loadedCurrentUser.getAuthToken())
-                            .then((authData) => {
-                                return this.buildCurrentUserWithAuthData(authData);
-                            })
-                            .then((authedCurrentUser) => {
-                                return this.establishCurrentUser(authedCurrentUser);
-                            });
-                    })
-                    .catch((throwable) => {
-                        if (throwable.type === 'NoAuthFound') {
-                            return currentUser;
-                        } else if (throwable.type === 'UserDoesNotExist') {
-                            return this.deleteAuthData()
-                                .then(() => {
-                                    return currentUser;
-                                });
-                        }
-                        throw throwable;
-                    });
+        let currentUser = this.getCurrentUser();
+        if (!currentUser) {
+            //NOTE BRN: Must establish anonymous user first so that we can load the current user from db
+            currentUser = this.establishAnonymousCurrentUser();
+            const loadedCurrentUser = await this.tryLoadCurrentUser();
+            if (loadedCurrentUser) {
+                currentUser = loadedCurrentUser;
             }
-            return this.establishCurrentUser(currentUser);
-        });
+        }
+        return this.establishCurrentUser(currentUser);
     },
 
     /**
-     * @returns {CurrentUser}
+     * @return {CurrentUser}
      */
     getCurrentUser() {
         const recipeContext = ContextController.getCurrentRecipeContext();
@@ -132,107 +113,71 @@ const AuthController = Class.extend(Obj, {
     /**
      * @param {string} email
      * @param {string} password
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
-    login(email, password) {
-        return this.authWithPassword(email, password)
-            .then((authData) => {
-                return this.buildCurrentUserWithAuthData(authData);
-            })
-            .then((currentUser) => {
-                return this.saveAuthData(currentUser.getAuthData());
-            })
-            .then(() => {
-                return this.loadCurrentUser();
-            })
-            .then((loadedCurrentUser) => {
-                return this.establishCurrentUser(loadedCurrentUser);
-            });
+    async login(email, password) {
+        const authData              = await this.authWithPassword(email, password);
+        const currentUser           = await this.buildCurrentUserWithAuthData(authData);
+        await this.saveAuthData(currentUser.getAuthData());
+        const loadedCurrentUser     = this.loadCurrentUser();
+        return this.establishCurrentUser(loadedCurrentUser);
     },
 
     /**
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
-    logout() {
+    async logout() {
         //NOTE BRN: Auth first so that we can establish connection with firebase and radio in the unauth
-        return this.auth()
-            .then(() => {
-                return this.unauth();
-            })
-            .then(() => {
-                return this.deleteCurrentUser();
-            })
-            .then(() => {
-                //NOTE BRN: Reauth to establish an anonymous current user
-                return this.auth();
-            });
+        await this.auth();
+        this.unauth();
+        await this.deleteCurrentUser();
+        return await this.auth();
     },
 
     /**
      * @param {string} username
      * @param {string} email
      * @param {string} password
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
-    signUp(username, email, password) {
+    async signUp(username, email, password) {
         // TODO BRN: Validate username, password
         email       = email.toLowerCase();
         username    = username.toLowerCase();
-        return EmailField.validateEmail({
+        await EmailField.validateEmail({
             id: null
-        }, email).then(() => {
-            return Firebase.createUser({
-                email: email,
-                password: password
-            });
-        }).then((firebaseUser) => {
-            return this.authWithPassword(email, password)
-                .then((authData) => {
-                    return [firebaseUser, authData];
-                });
-        }).then((results) => {
-            const [firebaseUser, authData] = results;
-            const userData = {
-                email: '',
-                id: firebaseUser.uid,
-                signedUp: false,
-                username: ''
-            };
-            return UserManager.set({ userId: firebaseUser.uid },  userData)
-                .then((userEntity) => {
-                    return [userEntity, authData];
-                });
-        }).then((results) => {
-            const [userEntity, authData] = results;
-            return this.completeSignupWithUsernameAndEmail(userEntity, username, email)
-                .then(() => {
-                    return this.buildCurrentUserWithAuthData(authData);
-                });
-        }).then((currentUser) => {
-            return this.saveAuthData(currentUser.getAuthData())
-                .then(() => {
-                    return this.loadCurrentUser();
-                })
-                .then((loadedCurrentUser) => {
-                    return this.establishCurrentUser(loadedCurrentUser);
-                });
+        }, email);
+        const firebaseUser = await Firebase.createUser({
+            email: email,
+            password: password
         });
+        const authData = await this.authWithPassword(email, password);
+        const userData = {
+            email: '',
+            id: firebaseUser.uid,
+            signedUp: false,
+            username: ''
+        };
+        const userEntity = await UserManager.set({ userId: firebaseUser.uid },  userData);
+        await this.completeSignupWithUsernameAndEmail(userEntity, username, email);
+        const currentUser = await this.buildCurrentUserWithAuthDataAndUserEntity(authData, userEntity);
+        await this.saveAuthData(currentUser.getAuthData());
+        const loadedCurrentUser = await this.loadCurrentUser();
+        return this.establishCurrentUser(loadedCurrentUser);
     },
 
     /**
      * @param {UserEntity} userEntity
      * @param {string} username
      * @param {string} email
-     * @return {Promise}
      */
-    completeSignupWithUsernameAndEmail(userEntity, username, email) {
-        return Promises.all([
+    async completeSignupWithUsernameAndEmail(userEntity, username, email) {
+        await Promises.all([
             EmailField.changeUsersEmail(userEntity, email),
             UsernameField.changeUsersUsername(userEntity, username)
-        ]).then(() => {
-            return UserManager.update({ userId: userEntity.getId() }, {
-                signedUp: true
-            });
+        ]);
+        return await UserManager.update({ userId: userEntity.getId() }, {
+            signedUp: true
         });
     },
 
@@ -245,15 +190,14 @@ const AuthController = Class.extend(Obj, {
      * @private
      * @param {string} email
      * @param {string} password
-     * @return {Promise<AuthData>}
+     * @return {AuthData}
      */
-    authWithPassword(email, password) {
-        return Firebase.authWithPassword({
+    async authWithPassword(email, password) {
+        const data = await Firebase.authWithPassword({
             email: email,
             password: password
-        }).then((data) => {
-            return new AuthData(data);
         });
+        return new AuthData(data);
     },
 
     /**
@@ -262,37 +206,28 @@ const AuthController = Class.extend(Obj, {
      *      expires: number,
      *      uid: string
      * }} data
-     * @returns {Promise}
      */
-    authDebugWithAuthData(data) {
+    async authDebugWithAuthData(data) {
         const debugToken = FirebaseTokenGenerator.generateDebugTokenWithAuthData(data);
-        return Firebase.authWithCustomToken(debugToken);
+        return await Firebase.authWithCustomToken(debugToken);
     },
 
     /**
      * @private
      * @param {string} token
-     * @return {Promise<AuthData>}
+     * @return {AuthData}
      */
-    authWithToken(token) {
-        return Firebase.authWithCustomToken(token)
-            .then((data) => {
-                if (ConfigController.getProperty('debug')) {
-                    return this.authDebugWithAuthData(data)
-                        .then(() => {
-                            return data;
-                        });
-                }
-                return data;
-            })
-            .then((data) => {
-                return new AuthData(data);
-            });
+    async authWithToken(token) {
+        const data = await Firebase.authWithCustomToken(token);
+        if (ConfigController.getProperty('debug')) {
+            await this.authDebugWithAuthData(data);
+        }
+        return new AuthData(data);
     },
 
     /**
      * @private
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
     buildAnonymousCurrentUser() {
         const userData = new UserData({
@@ -306,38 +241,43 @@ const AuthController = Class.extend(Obj, {
     /**
      * @private
      * @param {AuthData} authData
-     * @return {Promise<CurrentUser>}
+     * @return {CurrentUser}
      */
-    buildCurrentUserWithAuthData(authData) {
-        return UserManager.get({ userId: authData.getUid() })
-            .then((userEntity) => {
-                if (!userEntity) {
-                    throw Throwables.exception('UserDoesNotExist', {}, 'User with uid "' + authData.getUid() + '" does not exist');
-                }
-                //NOTE: Change to static UserData to prevent data from being lost if we need to reauth during a context switch.
-                const userData = new UserData(userEntity.getRawData());
-                return new CurrentUser(userData, authData);
-            });
+    async buildCurrentUserWithAuthData(authData) {
+        const userEntity = await UserManager.get({ userId: authData.getUid() });
+        if (!userEntity) {
+            throw Throwables.exception('UserDoesNotExist', {}, 'User with uid "' + authData.getUid() + '" does not exist');
+        }
+        return this.buildCurrentUserWithAuthDataAndUserEntity(authData, userEntity);
     },
 
     /**
      * @private
-     * @return {Promise}
+     * @param {AuthData} authData
+     * @param {UserEntity} userEntity
+     * @return {CurrentUser}
      */
-    deleteAuthData() {
+    buildCurrentUserWithAuthDataAndUserEntity(authData, userEntity) {
+        //NOTE: Change to static UserData to prevent data from being lost if we need to reauth during a context switch.
+        const userData = new UserData(userEntity.getRawData());
+        return new CurrentUser(userData, authData);
+    },
+
+    /**
+     * @private
+     * @returns {{deleted: boolean, exists: boolean, key: *, value: *}}
+     */
+    async deleteAuthData() {
         return ConfigController.deleteConfigProperty('auth');
     },
 
     /**
      * @private
-     * @return {Promise}
      */
-    deleteCurrentUser() {
+    async deleteCurrentUser() {
         const recipeContext = ContextController.getCurrentRecipeContext();
-        return this.deleteAuthData()
-            .then(() => {
-                this.recipeContextToCurrentUserMap.remove(recipeContext);
-            });
+        await this.deleteAuthData();
+        this.recipeContextToCurrentUserMap.remove(recipeContext);
     },
 
     /**
@@ -369,35 +309,31 @@ const AuthController = Class.extend(Obj, {
 
     /**
      * @private
+     * @return {AuthData}
      */
-    loadAuthData() {
-        return ConfigController.getConfigProperty('auth')
-            .then((data) => {
-                if (!data) {
-                    throw Throwables.exception('NoAuthFound');
-                }
-                return new AuthData(data);
-            });
+    async loadAuthData() {
+        const data = await ConfigController.getConfigProperty('auth');
+        if (!data) {
+            throw Throwables.exception('NoAuthFound');
+        }
+        return new AuthData(data);
     },
 
     /**
      * @private
-     * @returns {Promise.<CurrentUser>}
+     * @return {CurrentUser}
      */
-    loadCurrentUser() {
-        return this.loadAuthData()
-            .then((authData) => {
-                return this.buildCurrentUserWithAuthData(authData);
-            });
+    async loadCurrentUser() {
+        const authData = await this.loadAuthData();
+        return this.buildCurrentUserWithAuthData(authData);
     },
 
     /**
      * @private
      * @param {AuthData} authData
-     * @returns {Promise}
      */
-    saveAuthData(authData) {
-        return ConfigController.setConfigProperty('auth', authData.toObject());
+    async saveAuthData(authData) {
+        await ConfigController.setConfigProperty('auth', authData.toObject());
     },
 
     /**
@@ -413,14 +349,31 @@ const AuthController = Class.extend(Obj, {
 
     /**
      * @private
-     * @return {Promise}
+     * @return {CurrentUser}
+     */
+    async tryLoadCurrentUser() {
+        try {
+            const loadedCurrentUser     = await this.loadCurrentUser();
+            const authData              = await this.authWithToken(loadedCurrentUser.getAuthToken());
+            return this.buildCurrentUserWithAuthData(authData);
+        } catch(throwable) {
+            if (throwable.type === 'NoAuthFound') {
+                return null;
+            } else if (throwable.type === 'UserDoesNotExist') {
+                await this.deleteAuthData();
+                return null;
+            }
+            throw throwable;
+        }
+    },
+
+    /**
+     * @private
      */
     unauth() {
-        return Promises.try(() => {
-            Firebase.unauth();
-            // TODO BRN: Move to custom auth strategy. Store auth tokens in firebase. When user logs out, mark token as
-            // invalid to prevent reuse of auth token.
-        });
+        Firebase.unauth();
+        // TODO BRN: Move to custom auth strategy. Store auth tokens in firebase. When user logs out, mark token as
+        // invalid to prevent reuse of auth token.
     }
 });
 

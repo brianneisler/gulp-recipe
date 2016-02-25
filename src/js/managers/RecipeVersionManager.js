@@ -42,11 +42,13 @@ const RecipeVersionManager = Class.extend(EntityManager, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @param {string} recipeType
+     * @param {string} recipeScope
      * @param {string} recipeName
      * @param {string} recipeVersion
      * @return {Promise<RecipeVersionEntity>}
      */
-    create(recipeName, recipeVersion) {
+    create(recipeType, recipeScope, recipeName, recipeVersion) {
         const semanticVersion = SemanticVersionField.parse(recipeVersion);
         const data = {
             published: false,
@@ -56,9 +58,9 @@ const RecipeVersionManager = Class.extend(EntityManager, {
             versionNumber: semanticVersion.version
         };
         const pathData = {
-            recipeName: recipeName,
-            recipeScope: 'public',
-            recipeType: 'gulp',
+            recipeName,
+            recipeScope,
+            recipeType,
             versionNumber: semanticVersion.version
         };
         return this.set(pathData, data);

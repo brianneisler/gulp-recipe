@@ -10,7 +10,7 @@ program
     .parse(process.argv);
 
 ((options) => {
-    var SignupCommand = require('../dist/js/commands/SignupCommand').default;
+    var SignupCommand = require('..').commands.SignupCommand;
     SignupCommand.run(options)
         .then(() => {
             process.exit();

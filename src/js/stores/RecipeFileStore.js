@@ -5,11 +5,12 @@
 import {
     Class,
     Obj,
-    Promises
+    Promises,
+    Throwables,
+    TypeUtil
 } from 'bugcore';
 import { RecipeFileCache } from '../caches';
 import { RecipeFile } from '../core';
-
 
 
 //-------------------------------------------------------------------------------
@@ -68,18 +69,42 @@ const RecipeFileStore = Class.extend(Obj, {
 
     /**
      * @param {string} recipeFilePath
-     * @return {Promise<RecipeFile>}
+     * @return {RecipeFile}
      */
-    loadRecipeFile(recipeFilePath) {
-        const recipeFile = this.recipeFileCache.getRecipeFile(recipeFilePath);
+    async loadRecipeFile(recipeFilePath) {
+        let recipeFile = this.recipeFileCache.get(recipeFilePath);
         if (!recipeFile) {
-            return RecipeFile.loadFromFile(recipeFilePath)
-                .then((loadedRecipeFile) => {
-                    this.recipeFileCache.setRecipeFile(recipeFilePath, loadedRecipeFile);
-                    return loadedRecipeFile;
-                });
+            try {
+                recipeFile = await RecipeFile.loadFromFile(recipeFilePath);
+                this.validateRecipeFile(recipeFile);
+            } catch (throwable) {
+                if (throwable.type !== 'NoRecipeFileFound') {
+                    throw throwable;
+                }
+            }
+            if (recipeFile) {
+                this.recipeFileCache.set(recipeFilePath, recipeFile);
+            }
         }
-        return Promises.resolve(recipeFile);
+        return recipeFile;
+    },
+
+
+    //-------------------------------------------------------------------------------
+    // Private Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @private
+     * @param {RecipeFile} recipeFile
+     */
+    validateRecipeFile(recipeFile) {
+        if (!TypeUtil.isString(recipeFile.getName())) {
+            throw Throwables.exception('InvalidRecipeFile', {}, 'Invalid recipe.json file, "name" must be specified.');
+        }
+        if (!TypeUtil.isString(recipeFile.getVersion())) {
+            throw Throwables.exception('InvalidRecipeFile', {}, 'Invalid recipe.json file, "version" must be specified.');
+        }
     }
 });
 

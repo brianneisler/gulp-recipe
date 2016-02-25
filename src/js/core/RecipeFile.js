@@ -7,9 +7,11 @@ import {
     IJsonable,
     IObjectable,
     Obj,
-    Promises,
     Throwables
 } from 'bugcore';
+import {
+    RecipeData
+} from '../data';
 import fs from 'fs-promise';
 
 
@@ -33,9 +35,9 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @constructs
      * @param {string} filePath
-     * @param {{}} data
+     * @param {RecipeData} recipeData
      */
-    _constructor(filePath, data) {
+    _constructor(filePath, recipeData) {
 
         this._super();
 
@@ -48,19 +50,13 @@ const RecipeFile = Class.extend(Obj, {
          * @private
          * @type {string}
          */
-        this.filePath   = filePath;
+        this.filePath       = filePath;
 
         /**
          * @private
-         * @type {string}
+         * @type {RecipeData}
          */
-        this.name       = data.name;
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.version    = data.version;
+        this.recipeData     = recipeData;
     },
 
 
@@ -78,15 +74,50 @@ const RecipeFile = Class.extend(Obj, {
     /**
      * @return {string}
      */
+    getMain() {
+        return this.recipeData.getMain();
+    },
+
+    /**
+     * @return {string}
+     */
     getName() {
-        return this.name;
+        return this.recipeData.getName();
+    },
+
+    /**
+     * @return {Object.<string, string>}
+     */
+    getNpmDependencies() {
+        return this.recipeData.getNpmDependencies();
+    },
+
+    /**
+     * @return {RecipeData}
+     */
+    getRecipeData() {
+        return this.recipeData;
+    },
+
+    /**
+     * @return {string}
+     */
+    getScope() {
+        return this.recipeData.getScope();
+    },
+
+    /**
+     * @return {string}
+     */
+    getType() {
+        return this.recipeData.getType();
     },
 
     /**
      * @return {string}
      */
     getVersion() {
-        return this.version;
+        return this.recipeData.getVersion();
     },
 
 
@@ -110,10 +141,7 @@ const RecipeFile = Class.extend(Obj, {
      * @return {Object}
      */
     toObject() {
-        return {
-            name: this.name,
-            version: this.version
-        };
+        return this.recipeData.toObject();
     },
 
 
@@ -122,19 +150,17 @@ const RecipeFile = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {Promise}
+     *
      */
-    saveToFile() {
-        return Promises.try(() => {
-            const json = this.toJson();
-            const options = {
-                encoding: 'utf8',
-                mode: 0o600,
-                flag: 'w'
-            };
-            console.log('Writing to file ', this.filePath);
-            return fs.writeFile(this.filePath, json, options);
-        });
+    async saveToFile() {
+        const json = this.toJson();
+        const options = {
+            encoding: 'utf8',
+            mode: 0o644,
+            flag: 'w'
+        };
+        console.log('Writing to file ', this.filePath);
+        return await fs.writeFile(this.filePath, json, options);
     }
 });
 
@@ -154,20 +180,19 @@ Class.implement(RecipeFile, IObjectable);
 /**
  * @static
  * @param {string} filePath
- * @return {Promise}
+ * @return {RecipeFile}
  */
-RecipeFile.loadFromFile = function(filePath) {
-    return fs.readFile(filePath, 'utf8')
-        .catch((error) => {
-            if (error.code === 'ENOENT') {
-                throw Throwables.exception('NoRecipeFileFound', {}, 'Could not find recipe file at "' + filePath + '"');
-            }
-            throw error;
-        })
-        .then((data) => {
-            const fileData = JSON.parse(data);
-            return new RecipeFile(filePath, fileData);
-        });
+RecipeFile.loadFromFile = async function(filePath) {
+    try {
+        const data      = await fs.readFile(filePath, 'utf8');
+        const fileData  = JSON.parse(data);
+        return new RecipeFile(filePath, new RecipeData(fileData));
+    } catch(error) {
+        if (error.code === 'ENOENT') {
+            throw Throwables.exception('NoRecipeFileFound', {}, 'Could not find recipe file at "' + filePath + '"');
+        }
+        throw error;
+    }
 };
 
 

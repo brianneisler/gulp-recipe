@@ -73,18 +73,15 @@ const RecipeQueryStore = Class.extend(Obj, {
 
     /**
      * @param {string} recipeQuery
-     * @return {Promise<QueryResultData>}
+     * @return {QueryResultData}
      */
-    query(recipeQuery) {
-        const queryResultData = this.recipeQueryCache.get(recipeQuery);
+    async query(recipeQuery) {
+        let queryResultData = this.recipeQueryCache.get(recipeQuery);
         if (!queryResultData) {
-            return this.doQuery(recipeQuery)
-                .then((newQueryResultData) => {
-                    this.recipeQueryCache.set(recipeQuery, newQueryResultData);
-                    return newQueryResultData;
-                });
+            queryResultData = await this.doQuery(recipeQuery);
+            this.recipeQueryCache.set(recipeQuery, queryResultData);
         }
-        return Promises.resolve(queryResultData);
+        return queryResultData;
     },
 
 
@@ -95,40 +92,33 @@ const RecipeQueryStore = Class.extend(Obj, {
     /**
      * @private
      * @param {string} recipeQuery
-     * @returns {Promise.<QueryResultData>}
+     * @return {QueryResultData}
      */
-    doQuery(recipeQuery) {
-        return Promises.try(() => {
-            const recipeQueryData = this.parseRecipeQuery(recipeQuery);
-            return this.loadRecipeVersionsInfoEntity(recipeQueryData.name)
-                .then((recipeVersionsInfoEntity) => {
-                    if (!recipeVersionsInfoEntity) {
-                        throw Throwables.exception('RecipeDoesNotExist', {}, 'A recipe by the name "' + recipeQueryData.name + '" does not exist.');
-                    }
-                    return [recipeQueryData, recipeVersionsInfoEntity];
-                });
-        }).then((results) => {
-            const [recipeQueryData, recipeVersionsInfoEntity] = results;
-            const versionNumber = this.resolveRecipeVersionNumber(recipeQueryData, recipeVersionsInfoEntity);
-            console.log('recipeQueryData.name:', recipeQueryData.name, ' versionNumber:', versionNumber);
-
-            if (!versionNumber) {
-                throw Throwables.exception('NoVersionMatch', {}, 'Cannot find a version match for "' + recipeQuery + '"');
-            }
-            return new QueryResultData({
-                name: recipeQueryData.name,
-                versionNumber
-            });
+    async doQuery(recipeQuery) {
+        const recipeQueryData = this.parseRecipeQuery(recipeQuery);
+        const recipeVersionsInfoEntity = await this.loadRecipeVersionsInfoEntity(recipeQueryData.name);
+        if (!recipeVersionsInfoEntity) {
+            throw Throwables.exception('RecipeDoesNotExist', {}, 'A recipe by the name "' + recipeQueryData.name + '" does not exist.');
+        }
+        const versionNumber = this.resolveRecipeVersionNumber(recipeQueryData, recipeVersionsInfoEntity);
+        if (!versionNumber) {
+            throw Throwables.exception('NoVersionMatch', {}, 'Cannot find a version match for "' + recipeQuery + '"');
+        }
+        return new QueryResultData({
+            name: recipeQueryData.name,
+            scope: recipeQueryData.scope,
+            type: recipeQueryData.type,
+            versionNumber
         });
     },
 
     /**
      * @private
      * @param {string} recipeName
-     * @return {Promise<RecipeVersionsInfoEntity>}
+     * @return {RecipeVersionsInfoEntity}
      */
-    loadRecipeVersionsInfoEntity(recipeName) {
-        return RecipeVersionsInfoManager.get({
+    async loadRecipeVersionsInfoEntity(recipeName) {
+        return await RecipeVersionsInfoManager.get({
             recipeName,
             recipeScope: 'public',
             recipeType: 'gulp'
@@ -140,6 +130,8 @@ const RecipeQueryStore = Class.extend(Obj, {
      * @param {string} recipeQuery
      * @return {{
      *      name: string,
+     *      scope: string,
+     *      type: string,
      *      versionQuery: string
      * }}
      */
@@ -148,10 +140,14 @@ const RecipeQueryStore = Class.extend(Obj, {
             const parts = recipeQuery.split('@');
             return {
                 name: parts[0],
+                scope: 'public',
+                type: 'gulp',
                 versionQuery: parts[1]
             };
         }
         return {
+            scope: 'public',
+            type: 'gulp',
             name: recipeQuery,
             versionQuery: ''
         };

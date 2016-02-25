@@ -14,7 +14,7 @@ program
 ((options) => {
 
     var path = _.first(program.args);
-    var PublishCommand = require('../dist/js/commands/PublishCommand').default;
+    var PublishCommand = require('..').commands.PublishCommand;
     PublishCommand.run(path, options)
         .then(() => {
             process.exit();

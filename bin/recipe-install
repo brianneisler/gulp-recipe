@@ -9,7 +9,7 @@ program
     .option('-p, --project', 'use project config file')
     .option('-u, --user', 'use user config file')
     .action((recipeQuery, options) => {
-        var InstallCommand = require('../dist/js/commands/InstallCommand').default;
+        var InstallCommand = require('..').commands.InstallCommand;
         InstallCommand.run(recipeQuery, options)
             .then((installedRecipe) => {
                 process.exit();

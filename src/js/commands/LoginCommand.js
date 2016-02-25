@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -61,10 +60,9 @@ const LoginCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(options) {
-        return Promises.try(() => {
+    async run(options) {
+        try {
             options = this.refineTargetOption(options, 'user');
-            console.log('options:', options);
             const schema = {
                 properties: {
                     email: {
@@ -79,30 +77,36 @@ const LoginCommand = Class.extend(Command, {
                 }
             };
 
-            return this.prompt(schema)
-                .then((result) => {
-                    return GulpRecipe.login(result.email, result.password, options)
-                        .catch((error) => {
-                            //TODO BRN: Handle recoverable login errors
-                            throw error;
-                        });
-                })
-                .then(() => {
-                    console.log('Success! Thanks for logging in.');
-                })
-                .catch((error) => {
-                    console.log('Login failed.');
-                    console.log(error);
-                    throw error;
-                });
-        });
-    }
+            const result = await this.prompt(schema);
+            await this.doLogin(result.email, result.password, options);
+            console.log('Success! Thanks for logging in.');
+        } catch(error) {
+            console.log('Login failed.');
+            console.log(error);
+            throw error;
+        }
+    },
 
 
     //-------------------------------------------------------------------------------
     // Private Methods
     //-------------------------------------------------------------------------------
 
+    /**
+     * @private
+     * @param {string} email
+     * @param {string} password
+     * @param {{}} options
+     */
+    async doLogin(email, password, options) {
+        try {
+            await GulpRecipe.login(email, password, options);
+        } catch(error) {
+            //TODO BRN: Handle recoverable login errors
+            console.log(error);
+            throw error;
+        }
+    }
 });
 
 

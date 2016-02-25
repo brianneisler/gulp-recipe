@@ -4,7 +4,6 @@
 
 import {
     Class,
-    Promises,
     Proxy
 } from 'bugcore';
 import Command from './Command';
@@ -57,19 +56,16 @@ const PublishCommand = Class.extend(Command, {
      * }} options
      * @return {Promise}
      */
-    run(recipePath, options) {
-        return Promises.try(() => {
+    async run(recipePath, options) {
+        try {
             options = this.refineTargetOption(options, 'project');
-            return GulpRecipe.publish(recipePath, options)
-                .then((publishKeyData) => {
-                    console.log('Recipe published ' + publishKeyData.getRecipeName() + '@' + publishKeyData.getRecipeVersionNumber());
-                })
-                .catch((error) => {
-                    console.log('Publish failed.');
-                    console.log(error);
-                    throw error;
-                });
-        });
+            const publishKeyData = await GulpRecipe.publish(recipePath, options);
+            console.log('Recipe published ' + publishKeyData.getRecipeName() + '@' + publishKeyData.getRecipeVersionNumber());
+        } catch(error) {
+            console.log('Publish failed.');
+            console.log(error);
+            throw error;
+        }
     }
 });
 

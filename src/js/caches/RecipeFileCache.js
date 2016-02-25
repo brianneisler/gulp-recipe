@@ -67,7 +67,7 @@ const RecipeFileCache = Class.extend(Obj, {
      * @param {string} recipeFilePath
      * @return {boolean}
      */
-    deleteRecipeFile(recipeFilePath) {
+    delete(recipeFilePath) {
         const cacheKey = this.makeCacheKey(recipeFilePath);
         return this.cacheKeyToRecipeFileMap.delete(cacheKey);
     },
@@ -76,7 +76,7 @@ const RecipeFileCache = Class.extend(Obj, {
      * @param {string} recipeFilePath
      * @return {RecipeFile}
      */
-    getRecipeFile(recipeFilePath) {
+    get(recipeFilePath) {
         const cacheKey = this.makeCacheKey(recipeFilePath);
         return this.cacheKeyToRecipeFileMap.get(cacheKey);
     },
@@ -85,7 +85,7 @@ const RecipeFileCache = Class.extend(Obj, {
      * @param {string} recipeFilePath
      * @return {boolean}
      */
-    hasRecipeFile(recipeFilePath) {
+    has(recipeFilePath) {
         const cacheKey = this.makeCacheKey(recipeFilePath);
         return this.cacheKeyToRecipeFileMap.containsKey(cacheKey);
     },
@@ -95,7 +95,7 @@ const RecipeFileCache = Class.extend(Obj, {
      * @param {RecipeFile} recipeFile
      * @return {RecipeFile}
      */
-    setRecipeFile(recipeFilePath, recipeFile) {
+    set(recipeFilePath, recipeFile) {
         const cacheKey = this.makeCacheKey(recipeFilePath);
         return this.cacheKeyToRecipeFileMap.put(cacheKey, recipeFile);
     },

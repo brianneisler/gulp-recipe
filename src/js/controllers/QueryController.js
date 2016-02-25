@@ -6,9 +6,7 @@ import {
     Class,
     Map,
     Obj,
-    Promises,
-    Proxy,
-    Throwables
+    Proxy
 } from 'bugcore';
 import {
     AuthController
@@ -73,15 +71,12 @@ const QueryController = Class.extend(Obj, {
 
     /**
      * @param {string} recipeQuery
-     * @return {Promise<QueryResultData>}
+     * @return {QueryResultData}
      */
-    query(recipeQuery) {
-        return Promises.try(() => {
-            return AuthController.getCurrentUser();
-        }).then((currentUser) => {
-            const recipeQueryStore = this.generateRecipeQueryStore(currentUser);
-            return recipeQueryStore.query(recipeQuery);
-        });
+    async query(recipeQuery) {
+        const currentUser = await AuthController.getCurrentUser();
+        const recipeQueryStore = this.generateRecipeQueryStore(currentUser);
+        return await recipeQueryStore.query(recipeQuery);
     },
 
 

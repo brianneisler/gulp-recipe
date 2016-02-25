@@ -35,47 +35,47 @@ const EmailField = Class.extend(Obj, {
  * @static
  * @param {UserEntity} userEntity
  * @param {string} inputEmail
- * @return {Promise}
  */
-EmailField.changeUsersEmail = function(userEntity, inputEmail) {
+EmailField.changeUsersEmail = async function(userEntity, inputEmail) {
     const email = TypeUtil.isString(inputEmail) ? inputEmail.toLowerCase() : inputEmail;
-    return this.validateEmail(userEntity, email)
-        .then(() => {
-            const updates = {
-                ['users/' + userEntity.getId() + '/email']: inputEmail,
-                ['indexes/emailToUserId/' + Firebase.escapePathPart(inputEmail)]: userEntity.getId()
-            };
-            if (userEntity.getEmail()) {
-                updates['indexes/emailToUserId/' + Firebase.escapePathPart(userEntity.getEmail())] = null;
-            }
-            return Firebase
-                .proof([])
-                .update(updates);
-        });
+    await this.validateEmail(userEntity, email);
+    const updates = {
+        ['users/' + userEntity.getId() + '/email']: inputEmail,
+        ['indexes/emailToUserId/' + Firebase.escapePathPart(inputEmail)]: userEntity.getId()
+    };
+    if (userEntity.getEmail()) {
+        updates['indexes/emailToUserId/' + Firebase.escapePathPart(userEntity.getEmail())] = null;
+    }
+    return await Firebase
+        .proof([])
+        .update(updates);
 };
 
 /**
  * @static
  * @param {UserEntity} userEntity
  * @param {string} email
- * @returns {Promise}
  */
-EmailField.validateEmail = function(userEntity, email) {
-    return Promises.try(() => {
-        if (!TypeUtil.isString(email) || !EmailValidator.validate(email)) {
-            throw Throwables.exception('BadEmail');
-        }
-        return EmailToUserIdIndex.getUserIdForEmail(email);
-    }).then((snapshot) => {
+EmailField.validateEmail = async function(userEntity, email) {
+    if (!TypeUtil.isString(email) || !EmailValidator.validate(email)) {
+        throw Throwables.exception('BadEmail');
+    }
+    try {
+        const snapshot = await EmailToUserIdIndex.getUserIdForEmail(email);
+
         if (!snapshot.exists()) {
-            return true;
+            return;
         }
         const userId = snapshot.val();
-        if (userId !== userEntity.getId()) {
+        if (userId === userEntity.getId()) {
+            throw Throwables.exception('EmailUnchanged');
+        }
+    } catch(error) {
+        if (error.message.indexOf('access_denied' > -1)) {
             throw Throwables.exception('EmailInUse');
         }
-        throw Throwables.exception('EmailUnchanged');
-    });
+        throw error;
+    }
 };
 
 

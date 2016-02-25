@@ -4,9 +4,7 @@
 
 import {
     Class,
-    Obj,
-    Throwables,
-    TypeUtil
+    Obj
 } from 'bugcore';
 import path from 'path';
 
@@ -30,8 +28,9 @@ const Recipe = Class.extend(Obj, {
 
     /**
      * @constructs
+     * @param {RecipeFile} recipeFile
      */
-    _constructor() {
+    _constructor(recipeFile) {
 
         this._super();
 
@@ -42,83 +41,15 @@ const Recipe = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {string}
+         * @type {RecipeFile}
          */
-        this.main               = '';
+        this.recipeFile     = recipeFile;
 
         /**
-         * @private
-         * @type {string}
-         */
-        this.name               = '';
-
-        /**
-         * @private
-         * @type {Object.<string, string>}
-         */
-        this.npmDependencies    = {};
-
-         /**
          * @private
          * @type {function(function(Error), *)}
          */
         this.recipeMethod       = null;
-
-        /**
-         * @private
-         * @type {RecipeStore}
-         */
-        this.recipeStore        = null;
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.version            = '';
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Init Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @param {RecipeStore} recipeStore
-     * @param {{
-     *      main: string,
-     *      name: string,
-     *      npmDependencies: Object.<string, string>,
-     *      version: string
-     * }} recipeObject
-     * @return {Recipe}
-     */
-    init(recipeStore, recipeObject) {
-        const _this = this._super();
-        if (_this) {
-            if (!recipeStore) {
-                throw new Throwables.illegalArgumentBug('recipeStore', recipeStore, 'must be supplied');
-            }
-            if (!TypeUtil.isObject(recipeObject)) {
-                throw new Throwables.illegalArgumentBug('recipeObject', recipeObject, 'must be an object');
-            }
-            if (!TypeUtil.isString(recipeObject.name)) {
-                throw new Throwables.illegalArgumentBug('recipeObject.name', recipeObject.name, 'must be a string');
-            }
-            if (!TypeUtil.isString(recipeObject.main)) {
-                throw new Throwables.illegalArgumentBug('recipeObject.main', recipeObject.main, 'must be a string');
-            }
-            if (!TypeUtil.isString(recipeObject.version)) {
-                throw new Throwables.illegalArgumentBug('recipeObject.version', recipeObject.version, 'must be a string');
-            }
-            _this.recipeStore = recipeStore;
-            _this.main = recipeObject.main;
-            _this.name = recipeObject.name;
-            _this.version = recipeObject.version;
-            if (TypeUtil.isObject(recipeObject.npmDependencies)) {
-                _this.npmDependencies = recipeObject.npmDependencies;
-            }
-        }
-        return _this;
     },
 
 
@@ -130,21 +61,21 @@ const Recipe = Class.extend(Obj, {
      * @return {string}
      */
     getMain() {
-        return this.main;
+        return this.recipeFile.getMain();
     },
 
     /**
      * @return {string}
      */
     getName() {
-        return this.name;
+        return this.recipeFile.getName();
     },
 
     /**
      * @return {Object.<string, string>}
      */
     getNpmDependencies() {
-        return this.npmDependencies;
+        return this.recipeFile.getNpmDependencies();
     },
 
     /**
@@ -155,17 +86,30 @@ const Recipe = Class.extend(Obj, {
     },
 
     /**
-     * @return {RecipeStore}
+     * @return {string}
      */
-    getRecipeStore() {
-        return this.recipeStore;
+    getRecipePath() {
+        return path.dirname(this.recipeFile.getFilePath());
     },
 
     /**
      * @return {string}
      */
+    getScope() {
+        return this.recipeFile.getScope();
+    },
+
+    /**
+     * @return {string}
+     */
+    getType() {
+        return this.recipeFile.getType();
+    },
+    /**
+     * @return {string}
+     */
     getVersion() {
-        return this.version;
+        return this.recipeFile.getVersion();
     },
 
 
@@ -178,7 +122,7 @@ const Recipe = Class.extend(Obj, {
      */
     runRecipe(recipeArgs) {
         if (!this.recipeMethod) {
-            this.recipeMethod = require(path.resolve(this.recipeStore.getRecipesDir(), this.name, this.main));
+            this.recipeMethod = require(path.resolve(this.getRecipePath(), this.main));
         }
         return this.recipeMethod.apply(null, recipeArgs);
     }

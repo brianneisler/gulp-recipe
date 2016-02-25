@@ -16,9 +16,9 @@ import { Data } from './';
  * @class
  * @extends {Data}
  */
-const QueryResultData = Class.extend(Data, {
+const RecipeData = Class.extend(Data, {
 
-    _name: 'recipe.QueryResultData',
+    _name: 'recipe.RecipeData',
 
 
     //-------------------------------------------------------------------------------
@@ -28,29 +28,43 @@ const QueryResultData = Class.extend(Data, {
     /**
      * @return {string}
      */
+    getMain() {
+        return this.getRawData().main;
+    },
+
+    /**
+     * @return {string}
+     */
     getName() {
         return this.getRawData().name;
+    },
+
+    /**
+     * @return {Object.<string, string>}
+     */
+    getNpmDependencies() {
+        return this.getRawData().npmDependencies || {};
     },
 
     /**
      * @return {string}
      */
     getScope() {
-        return this.getRawData().scope;
+        return this.getRawData().scope || 'public';
     },
 
     /**
      * @return {string}
      */
     getType() {
-        return this.getRawData().type;
+        return this.getRawData().type || 'gulp';
     },
 
     /**
      * @return {string}
      */
-    getVersionNumber() {
-        return this.getRawData().versionNumber;
+    getVersion() {
+        return this.getRawData().version;
     },
 
 
@@ -62,7 +76,7 @@ const QueryResultData = Class.extend(Data, {
      * @return {string}
      */
     toCacheKey() {
-        return this.getType() + '-' + this.getScope() + '-' + this.getName() + '-' + this.getVersionNumber();
+        return this.getName() + '-' + this.getVersion();
     }
 });
 
@@ -71,4 +85,4 @@ const QueryResultData = Class.extend(Data, {
 // Exports
 //-------------------------------------------------------------------------------
 
-export default QueryResultData;
+export default RecipeData;
