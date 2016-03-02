@@ -22,7 +22,7 @@ import prompt from 'prompt';
  */
 const Command = Class.extend(Obj, {
 
-    _name: 'recipe.Command',
+    _name: 'gulprecipe.Command',
 
 
     //-------------------------------------------------------------------------------

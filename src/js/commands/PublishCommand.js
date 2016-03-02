@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const PublishCommand = Class.extend(Command, {
 
-    _name: 'recipe.PublishCommand',
+    _name: 'gulprecipe.PublishCommand',
 
 
     //-------------------------------------------------------------------------------
@@ -59,8 +59,8 @@ const PublishCommand = Class.extend(Command, {
     async run(recipePath, options) {
         try {
             options = this.refineTargetOption(options, 'project');
-            const publishKeyData = await GulpRecipe.publish(recipePath, options);
-            console.log('Recipe published ' + publishKeyData.getRecipeName() + '@' + publishKeyData.getRecipeVersionNumber());
+            const publishKeyEntity = await GulpRecipe.publish(recipePath, options);
+            console.log('Recipe published ' + publishKeyEntity.getPackName() + '@' + publishKeyEntity.getPackVersionNumber());
         } catch(error) {
             console.log('Publish failed.');
             console.log(error);

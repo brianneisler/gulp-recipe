@@ -1,13 +1,17 @@
 /**
  * @static
- * @private
  * @enum {string}
  */
-export const RECIPE_DIR_NAME    = '.recipe';
+export const DEFAULT_PACK_SCOPE     = 'public';
 
 /**
  * @static
- * @private
  * @enum {string}
  */
-export const RECIPE_FILE_NAME   = 'recipe.json';
+export const PACK_CLASS             = 'gulp';
+
+/**
+ * @static
+ * @enum {string}
+ */
+export const PACK_TYPE              = 'recipe';

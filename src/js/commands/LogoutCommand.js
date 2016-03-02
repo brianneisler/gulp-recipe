@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const LogoutCommand = Class.extend(Command, {
 
-    _name: 'recipe.LogoutCommand',
+    _name: 'gulprecipe.LogoutCommand',
 
 
     //-------------------------------------------------------------------------------

@@ -13,10 +13,6 @@ import {
 import {
     Recipe
 } from '../core';
-import {
-    PathUtil
-} from '../util';
-import fs from 'fs-promise';
 
 
 //-------------------------------------------------------------------------------
@@ -29,7 +25,7 @@ import fs from 'fs-promise';
  */
 const RecipeStore = Class.extend(Obj, {
 
-    _name: 'recipe.RecipeStore',
+    _name: 'bitpack.RecipeStore',
 
 
     //-------------------------------------------------------------------------------
@@ -38,10 +34,8 @@ const RecipeStore = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {string} recipesDir
-     * @param {RecipeFileStore} recipeFileStore
      */
-    _constructor(recipesDir, recipeFileStore) {
+    _constructor() {
 
         this._super();
 
@@ -54,19 +48,7 @@ const RecipeStore = Class.extend(Obj, {
          * @private
          * @type {RecipeCache}
          */
-        this.recipeCache        = new RecipeCache();
-
-        /**
-         * @private
-         * @type {string}
-         */
-        this.recipesDir         = recipesDir;
-
-        /**
-         * @private
-         * @type {RecipeFileStore}
-         */
-        this.recipeFileStore    = recipeFileStore
+        this.recipeCache          = new RecipeCache();
     },
 
 
@@ -81,62 +63,22 @@ const RecipeStore = Class.extend(Obj, {
         return this.recipeCache;
     },
 
-    /**
-     * @return {string}
-     */
-    getRecipesDir() {
-        return this.recipesDir;
-    },
-
-    /**
-     * @return {RecipeFileStore}
-     */
-    getRecipeFileStore() {
-        return this.recipeFileStore;
-    },
-
 
     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {string} recipeType
-     * @param {string} recipeScope
-     * @param {string} recipeName
-     * @param {string} recipeVersionNumber
+     * @param {Pack} pack
      * @return {Recipe}
      */
-    async loadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber) {
-        let recipe = this.recipeCache.get(recipeType, recipeScope, recipeName, recipeVersionNumber);
+    generateRecipe(pack) {
+        let recipe = this.recipeCache.get(pack);
         if (!recipe) {
-            recipe = await this.doLoadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber);
-            if (recipe) {
-                this.recipeCache.set(recipeType, recipeScope, recipeName, recipeVersionNumber, recipe);
-            }
+            recipe = new Recipe(pack);
+            this.recipeCache.set(pack, recipe);
         }
         return recipe;
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Private Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @param {string} recipeType
-     * @param {string} recipeScope
-     * @param {string} recipeName
-     * @param {string} recipeVersionNumber
-     * @return {Recipe}
-     */
-    async doLoadRecipe(recipeType, recipeScope, recipeName, recipeVersionNumber) {
-        const recipeFilePath = PathUtil.resolveRecipeFilePath(this.recipesDir, recipeType, recipeScope, recipeName, recipeVersionNumber);
-        const recipeFile = await this.recipeFileStore.loadRecipeFile(recipeFilePath);
-        if (!recipeFile) {
-            throw Throwables.exception('RecipeDoesNotExist');
-        }
-        return new Recipe(recipeFile);
     }
 });
 

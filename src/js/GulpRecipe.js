@@ -6,32 +6,16 @@ import {
     ArgUtil,
     Class,
     Obj,
-    ObjectBuilder,
-    Proxy,
-    Throwables,
-    TypeUtil
+    Proxy
 } from 'bugcore';
 import path from 'path';
-import * as commands from './commands';
-import * as config from './config';
-import * as controllers from './controllers';
-import * as core from './core';
-import * as data from './data';
-import * as entities from './entities';
-import * as managers from './managers';
-import * as util from './util';
-
-
-//-------------------------------------------------------------------------------
-// Simplify References
-//-------------------------------------------------------------------------------
-
-const {
-    AuthController,
-    ConfigController,
-    ContextController,
-    RecipeController
-} = controllers;
+import {
+    DEFAULT_PACK_SCOPE,
+    PACK_CLASS,
+    PACK_TYPE
+} from './defines';
+import { BitPack } from 'bitpack';
+import { RecipeStore } from './stores';
 
 
 //-------------------------------------------------------------------------------
@@ -44,7 +28,37 @@ const {
  */
 const GulpRecipe = Class.extend(Obj, {
 
-    _name: 'recipe.GulpRecipe',
+    _name: 'gulprecipe.GulpRecipe',
+
+
+    //-------------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @constructs
+     */
+    _constructor() {
+
+        this._super();
+
+
+        //-------------------------------------------------------------------------------
+        // Public Properties
+        //-------------------------------------------------------------------------------
+
+        /**
+         * @private
+         * @type {string}
+         */
+        this.bitPack        = new BitPack(PACK_TYPE);
+
+        /**
+         * @private
+         * @type {RecipeStore}
+         */
+        this.recipeStore    = new RecipeStore();
+    },
 
 
     //-------------------------------------------------------------------------------
@@ -61,10 +75,7 @@ const GulpRecipe = Class.extend(Obj, {
      * }} configObject
      */
     configure(configObject) {
-        if (TypeUtil.isObject(configObject)) {
-            return ConfigController.updateConfigOverrides(configObject);
-        }
-        throw Throwables.illegalArgumentBug('configObject', configObject, 'must be an object');
+        return this.bitPack.configure(configObject);
     },
 
     /**
@@ -75,11 +86,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {{deleted: boolean, exists: boolean, key: *, value: *}}
      */
     async configDelete(key, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        await this.context(options);
-        return await ConfigController.deleteConfigProperty(key);
+        return await this.bitPack.configDelete(key, options);
     },
 
     /**
@@ -90,11 +97,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {*}
      */
     async configGet(key, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        await this.context(options);
-        return await ConfigController.getConfigProperty(key);
+        return await this.bitPack.configGet(key, options);
     },
 
     /**
@@ -103,26 +106,9 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
      */
     async configSet(key, value, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        await this.context(options);
-        await ConfigController.setConfigProperty(key, value);
-    },
-
-    /**
-     * @param {{
-     *      execPath: string=,
-     *      target: string=
-     * }=} options
-     */
-    async context(options) {
-        ContextController.establishRecipeContext(options);
-        await ConfigController.loadConfigChain();
-        await AuthController.auth();
+        return await this.bitPack.configSet(key, value, options);
     },
 
     /**
@@ -133,11 +119,8 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {Recipe}
      */
     async get(recipeQuery, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        await this.context(options);
-        return await RecipeController.getRecipe(recipeQuery);
+        const pack = await this.bitPack.get(PACK_TYPE, PACK_CLASS, DEFAULT_PACK_SCOPE, recipeQuery, options);
+        return this.recipeStore.generateRecipe(pack);
     },
 
     /**
@@ -148,11 +131,8 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {Recipe}
      */
     async install(recipeQuery, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        await this.context(options);
-        return await RecipeController.installRecipe(recipeQuery);
+        const pack = await this.bitPack.install(PACK_TYPE, PACK_CLASS, DEFAULT_PACK_SCOPE, recipeQuery, options);
+        return this.recipeStore.generateRecipe(pack);
     },
 
     /**
@@ -161,14 +141,9 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
      */
     async login(email, password, options) {
-        options = this.defineOptions(options, {
-            target: 'user'
-        });
-        await this.context(options);
-        return await AuthController.login(email, password);
+        return await this.bitPack.login(email, password, options);
     },
 
     /**
@@ -178,11 +153,7 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {CurrentUser}
      */
     async logout(options) {
-        options = this.defineOptions(options, {
-            target: 'user'
-        });
-        await this.context(options);
-        return await AuthController.logout();
+        return await this.bitPack.logout(options);
     },
 
     /**
@@ -206,20 +177,10 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
+     * @return {PublishKeyEntity}
      */
-    publish(recipePath, options) {
-        options = this.defineOptions(options, {
-            target: 'project'
-        });
-        if (!recipePath) {
-            recipePath = options.execPath;
-        }
-        recipePath = path.resolve(recipePath);
-        return this.context(options)
-            .then(() => {
-                return RecipeController.publishRecipe(recipePath);
-            });
+    async publish(recipePath, options) {
+        return this.bitPack.publish(PACK_TYPE, PACK_CLASS, DEFAULT_PACK_SCOPE, recipePath, options);
     },
 
     /**
@@ -229,101 +190,12 @@ const GulpRecipe = Class.extend(Obj, {
      * @param {{
      *      target: string=
      * }=} options
-     * @return {Promise}
+     * @return {CurrentUser}
      */
     async signUp(username, email, password, options) {
-        options = this.defineOptions(options, {
-            target: 'user'
-        });
-        await this.context(options);
-        return await AuthController.signUp(username, email, password);
-    },
-
-
-    //-------------------------------------------------------------------------------
-    // Private Methods
-    //-------------------------------------------------------------------------------
-
-    /**
-     * @private
-     * @param {{
-     *      execPath: string=,
-     *      target: string=
-     * }=} options
-     * @param {{
-     *      execPath: string=,
-     *      target: string=
-     * }=} suppliedDefaults
-     * @return {{
-     *      execPath: string,
-     *      target: string
-     * }}
-     */
-    defineOptions(options, suppliedDefaults) {
-        options             = options || {};
-        suppliedDefaults    = suppliedDefaults || {};
-        const defaults      = {
-            execPath: process.cwd()
-        };
-
-        return ObjectBuilder
-            .assign(defaults, suppliedDefaults, options)
-            .build();
+        return this.bitPack.signUp(uusername, email, password, options);
     }
 });
-
-
-//-------------------------------------------------------------------------------
-// Public Static Properties
-//-------------------------------------------------------------------------------
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.commands     = commands;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.config       = config;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.controllers  = controllers;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.core         = core;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.data         = data;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.entities     = entities;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.managers     = managers;
-
-/**
- * @static
- * @type {*}
- */
-GulpRecipe.util         = util;
 
 
 //-------------------------------------------------------------------------------

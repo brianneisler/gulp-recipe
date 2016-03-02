@@ -11,7 +11,7 @@ program
     .option('-b, --bool', 'value is "true" or "false"')
     .option('-i, --int', 'value is decimal number')
     .action((key, value, options) => {
-        var ConfigSetCommand = require('..').commands.ConfigSetCommand');
+        var ConfigSetCommand = require('..').commands.ConfigSetCommand;
         ConfigSetCommand.run(key, value, options)
             .then(() => {
                 process.exit();

@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const SignupCommand = Class.extend(Command, {
 
-    _name: 'recipe.SignupCommand',
+    _name: 'gulprecipe.SignupCommand',
 
 
     //-------------------------------------------------------------------------------

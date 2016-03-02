@@ -1,5 +1,7 @@
 # gulp-recipe
-Reusable and sharable recipes for gulp
+=============
+
+Package manager for gulp recipes.
 
 Many projects require the same gulp tasks with simple tweaks. This system is
 designed to make it easy to share and reuse gulp tasks.
@@ -37,10 +39,12 @@ var recipe          = require('gulp-recipe');
 
 // No defining dependencies in package.json or writing of basic gulp tasks.
 // gulp-recipe will download and install the task and all dependencies for you!
-gulp.task('lint', recipe.make('eslint', [
-    'path/to/my/js',
-    '!node_modules/**'
-]));
+gulp.task('lint', recipe.make('eslint', {
+    src: [
+        'path/to/my/js',
+        '!node_modules/**'
+    ]
+}));
 ```
 
 ## Quick Guides
@@ -61,7 +65,7 @@ gulp-recipe is dependent upon
 - [fs-extra](https://github.com/jprichardson/node-fs-extra) (0.26.5)
 - [fs-promise](https://github.com/kevinbeaty/fs-promise) (0.4.1)
 - [ignore](https://github.com/kaelzhang/node-ignore) (2.2.19)
-- [lodash]( "4.0.1",
+- [lodash](https://github.com/lodash/lodash)(4.0.1)
 - [npm](https://github.com/npm/npm) (3.7.3)
 - [prompt](https://github.com/flatiron/prompt) (1.0.0)
 - [request](https://github.com/request/request) (2.69.0)
@@ -93,10 +97,12 @@ In gulpfile:
 var gulp            = require('gulp');
 var recipe          = require('gulp-recipe');
 
-gulp.task('lint', recipe.make('eslint', [
-    'path/to/my/js',
-    '!node_modules/**'
-]));
+gulp.task('lint', recipe.make('eslint', {
+    src: [
+        'path/to/my/js',
+        '!node_modules/**'
+    ]
+));
 ```
 
 
@@ -112,6 +118,9 @@ gulp.task('lint', recipe.make('eslint', [
     -ep, --exec-path  path to execute on
 
 
+<br />
+------------------------------------------------------------------------------------
+
 ## Commands
 
 ### config 
@@ -121,16 +130,19 @@ gulp.task('lint', recipe.make('eslint', [
 
 This command lets you set, get, or delete config data from .reciperc config files
 
-## Config Files
+#### Config Files
 - config files are named '.reciperc OR .reciperc.json' and are all in JSON format 
 - all config files must have 0600 perms set or they will be ignored
 - locations of config files
-
-    built-in: [/path/to/gulp-recipe/config/.reciperc]
+```
     global: (ConfigController.get('prefix')[default: '/usr/local'])/etc/.reciperc
     per-user: '$HOME/.reciperc'
     per-project: '/path/to/project/.reciperc'
+```
 
+
+<br />
+------------------------------------------------------------------------------------
 
 ### config get
 
@@ -146,11 +158,121 @@ get value in config file
     -u, --user     use user config file
 
 
-#### key
-The json path to the value you want to get
+#### Params:
+    
+    <key> The property path to the value you want to get
+    
 
-Examples
-- get auth data from config
+##### Examples
+
+get auth data from config
 
     recipe config get auth
- 
+
+
+get deep path from config
+
+    recipe config get some.path.in.config.object
+
+
+<br />
+------------------------------------------------------------------------------------
+
+### config set
+
+    recipe config set [options] <key> <value>
+    
+    
+set value in config file
+
+#### Options:
+
+    -g, --global   use global config file
+    -p, --project  use project config file
+    -u, --user     use user config file
+
+
+#### Params:
+    
+    <key> The property path to the value you want to set
+    <value> The value you want to set
+    
+
+##### Examples
+
+get auth data from config
+
+    recipe config get auth
+
+
+get deep path from config
+
+    recipe config get some.path.in.config.object
+
+
+<br />
+------------------------------------------------------------------------------------
+
+### config delete
+
+    recipe config delete [options] <key>
+    
+    
+delete value from config file
+
+#### Options:
+
+    -g, --global   use global config file
+    -p, --project  use project config file
+    -u, --user     use user config file
+
+
+#### Params:
+    
+    <key> The property path to the value you want to delete
+    
+
+##### Examples
+
+delete auth data from config
+
+    recipe config delete auth
+
+
+delete deep path from config
+
+    recipe config delete some.path.in.config.object
+
+
+<br />
+------------------------------------------------------------------------------------
+
+### publish
+
+    recipe publish [options] <path>
+    
+    
+publish a recipe
+
+#### Options:
+
+    -g, --global   use global config file
+    -p, --project  use project config file
+    -u, --user     use user config file
+
+
+#### Params:
+    
+    <path> The file path to the package you want to publish
+    
+
+##### Examples
+
+publish current working directory
+
+    recipe publish
+
+
+publish a specific directory
+
+    recipe publish ./some/path/to/dir

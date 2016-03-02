@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const ConfigDeleteCommand = Class.extend(Command, {
 
-    _name: 'recipe.ConfigDeleteCommand',
+    _name: 'gulprecipe.ConfigDeleteCommand',
 
 
     //-------------------------------------------------------------------------------

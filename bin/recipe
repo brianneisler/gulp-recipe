@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 var program = require('commander');
+var package = require('../package.json');
 
 const result = program
-    .version('0.0.3') //TODO BRN: Get this value from package.json
+    .version(package.version) //TODO BRN: Get this value from package.json
     .option('-ep, --exec-path', 'path to execute on')
     .command('config [cmd]', 'set, get, or delete config')
     .command('install <recipe-query>', 'manually install a recipe')

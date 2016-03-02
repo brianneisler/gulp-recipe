@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const LoginCommand = Class.extend(Command, {
 
-    _name: 'recipe.LoginCommand',
+    _name: 'gulprecipe.LoginCommand',
 
 
     //-------------------------------------------------------------------------------

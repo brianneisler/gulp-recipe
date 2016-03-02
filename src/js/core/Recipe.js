@@ -19,7 +19,7 @@ import path from 'path';
  */
 const Recipe = Class.extend(Obj, {
 
-    _name: 'recipe.Recipe',
+    _name: 'gulprecipe.Recipe',
 
 
     //-------------------------------------------------------------------------------
@@ -28,9 +28,9 @@ const Recipe = Class.extend(Obj, {
 
     /**
      * @constructs
-     * @param {RecipeFile} recipeFile
+     * @param {Pack} pack
      */
-    _constructor(recipeFile) {
+    _constructor(pack) {
 
         this._super();
 
@@ -41,9 +41,9 @@ const Recipe = Class.extend(Obj, {
 
         /**
          * @private
-         * @type {RecipeFile}
+         * @type {Pack}
          */
-        this.recipeFile     = recipeFile;
+        this.pack               = pack;
 
         /**
          * @private
@@ -58,24 +58,10 @@ const Recipe = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
-     * @return {string}
+     * @return {Pack}
      */
-    getMain() {
-        return this.recipeFile.getMain();
-    },
-
-    /**
-     * @return {string}
-     */
-    getName() {
-        return this.recipeFile.getName();
-    },
-
-    /**
-     * @return {Object.<string, string>}
-     */
-    getNpmDependencies() {
-        return this.recipeFile.getNpmDependencies();
+    getPack() {
+        return this.pack;
     },
 
     /**
@@ -85,46 +71,19 @@ const Recipe = Class.extend(Obj, {
         return this.recipeMethod;
     },
 
-    /**
-     * @return {string}
-     */
-    getRecipePath() {
-        return path.dirname(this.recipeFile.getFilePath());
-    },
-
-    /**
-     * @return {string}
-     */
-    getScope() {
-        return this.recipeFile.getScope();
-    },
-
-    /**
-     * @return {string}
-     */
-    getType() {
-        return this.recipeFile.getType();
-    },
-    /**
-     * @return {string}
-     */
-    getVersion() {
-        return this.recipeFile.getVersion();
-    },
-
 
     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
 
     /**
-     * @param {Array.<*>} recipeArgs
+     * @param {Array.<*>} packArgs
      */
-    runRecipe(recipeArgs) {
-        if (!this.recipeMethod) {
-            this.recipeMethod = require(path.resolve(this.getRecipePath(), this.main));
+    runPack(packArgs) {
+        if (!this.packMethod) {
+            this.packMethod = require(path.resolve(this.pack.getPackPath(), this.pack.getMain()));
         }
-        return this.recipeMethod.apply(null, recipeArgs);
+        return this.packMethod.apply(null, packArgs);
     }
 });
 

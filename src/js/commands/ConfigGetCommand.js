@@ -20,7 +20,7 @@ import GulpRecipe from '../GulpRecipe';
  */
 const ConfigGetCommand = Class.extend(Command, {
 
-    _name: 'recipe.ConfigGetCommand',
+    _name: 'gulprecipe.ConfigGetCommand',
 
 
     //-------------------------------------------------------------------------------
