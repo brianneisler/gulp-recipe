@@ -8,12 +8,12 @@ import {
     Obj,
     Proxy
 } from 'bugcore';
-import path from 'path';
 import {
     DEFAULT_PACK_SCOPE,
     PACK_CLASS,
     PACK_TYPE
 } from './defines';
+import * as commands from './commands';
 import { BitPack } from 'bitpack';
 import { RecipeStore } from './stores';
 
@@ -193,9 +193,20 @@ const GulpRecipe = Class.extend(Obj, {
      * @return {CurrentUser}
      */
     async signUp(username, email, password, options) {
-        return this.bitPack.signUp(uusername, email, password, options);
+        return this.bitPack.signUp(username, email, password, options);
     }
 });
+
+
+//-------------------------------------------------------------------------------
+// Static Properties
+//-------------------------------------------------------------------------------
+
+/**
+ * @static
+ * @type {*}
+ */
+GulpRecipe.commands = commands;
 
 
 //-------------------------------------------------------------------------------

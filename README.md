@@ -55,22 +55,12 @@ gulp.task('lint', recipe.make('eslint', {
 ## Dependencies
 
 gulp-recipe is dependent upon
+- [babel-polyfill](https://github.com/babel/babel) (6.5.0)
+- [bitpack](https://github.com/brianneisler/bitpack) (0.1.0)
 - [bugcore](https://github.com/airbug/bugcore) (0.3.27)
 - [commander](https://github.com/tj/commander.js) (2.9.0
-- [email-validator](https://github.com/Sembiance/email-validator) (1.0.4)
-- [firebase](https://github.com/firebase) (2.4.0) 
-- [npm](https://github.com/npm/npm)
-- [firebase-token-generator](https://github.com/firebase/firebase-token-generator-node) (2.0.0)
-- [fireproof](https://github.com/casetext/fireproof) (3.1.0)
-- [fs-extra](https://github.com/jprichardson/node-fs-extra) (0.26.5)
-- [fs-promise](https://github.com/kevinbeaty/fs-promise) (0.4.1)
-- [ignore](https://github.com/kaelzhang/node-ignore) (2.2.19)
 - [lodash](https://github.com/lodash/lodash)(4.0.1)
-- [npm](https://github.com/npm/npm) (3.7.3)
 - [prompt](https://github.com/flatiron/prompt) (1.0.0)
-- [request](https://github.com/request/request) (2.69.0)
-- [semver](https://github.com/npm/node-semver) (5.1.0)
-- [tar-fs](https://github.com/mafintosh/tar-fs) (1.10.0)
 
 
 ## Download Source
@@ -135,7 +125,7 @@ This command lets you set, get, or delete config data from .reciperc config file
 - all config files must have 0600 perms set or they will be ignored
 - locations of config files
 ```
-    global: (ConfigController.get('prefix')[default: '/usr/local'])/etc/.reciperc
+    global: (config.get('prefix')[default: '/usr/local'])/etc/.reciperc
     per-user: '$HOME/.reciperc'
     per-project: '/path/to/project/.reciperc'
 ```

@@ -58,6 +58,13 @@ const Recipe = Class.extend(Obj, {
     //-------------------------------------------------------------------------------
 
     /**
+     * @return {string}
+     */
+    getName() {
+        return this.pack.getName();
+    },
+
+    /**
      * @return {Pack}
      */
     getPack() {
@@ -65,10 +72,31 @@ const Recipe = Class.extend(Obj, {
     },
 
     /**
+     * @return {string}
+     */
+    getPackClass() {
+        return this.pack.getPackClass();
+    },
+
+    /**
      * @return {function(function(Error), *)}
      */
     getRecipeMethod() {
         return this.recipeMethod;
+    },
+
+    /**
+     * @return {string}
+     */
+    getScope() {
+        return this.pack.getScope();
+    },
+
+    /**
+     * @return {string}
+     */
+    getVersion() {
+        return this.pack.getVersion();
     },
 
 

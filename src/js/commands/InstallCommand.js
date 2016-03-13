@@ -60,7 +60,7 @@ const InstallCommand = Class.extend(Command, {
         try {
             options = this.refineTargetOption(options, 'project');
             const installedRecipe = await GulpRecipe.install(recipeQuery, options);
-            console.log(installedRecipe.getScope() + ' ' + installedRecipe.getType() +  ' recipe installed ' + installedRecipe.getName() + '@' + installedRecipe.getVersion());
+            console.log(installedRecipe.getScope() + ' ' + installedRecipe.getPackClass() +  '-recipe installed ' + installedRecipe.getName() + '@' + installedRecipe.getVersion());
         } catch(error) {
             console.log('Install failed.');
             console.log(error);

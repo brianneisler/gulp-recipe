@@ -64,6 +64,7 @@ const PublishCommand = Class.extend(Command, {
         } catch(error) {
             console.log('Publish failed.');
             console.log(error);
+            console.log(error.stack);
             throw error;
         }
     }
