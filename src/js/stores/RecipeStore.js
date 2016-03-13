@@ -4,8 +4,7 @@
 
 import {
     Class,
-    Obj,
-    Throwables
+    Obj
 } from 'bugcore';
 import {
     RecipeCache
