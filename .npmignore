@@ -3,6 +3,7 @@ docs
 examples
 src
 test
+.babelrc
 .editorconfig
 .eslintrc.json
 .reciperc
